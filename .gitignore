@@ -1,0 +1,9 @@
+# fichiers binaires du Cerema, recuperes a la construction
+vendor/
+# artefacts intermediaires
+build/
+node_modules/
+package-lock.json
+*.pyc
+__pycache__/
+.DS_Store

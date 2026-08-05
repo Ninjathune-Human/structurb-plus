@@ -1,0 +1,12 @@
+{
+  "name": "structurb-plus",
+  "version": "1.0.0",
+  "description": "Dimensionnement de chaussée urbaine et bilan carbone à 50 ans",
+  "license": "GPL-3.0-or-later",
+  "private": true,
+  "scripts": {
+    "build": "python3 tools/build_data.py && python3 tools/build.py",
+    "test": "node tests/test.js"
+  },
+  "devDependencies": { "jsdom": "^25.0.0" }
+}

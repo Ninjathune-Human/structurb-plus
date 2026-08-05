@@ -592,6 +592,23 @@ function bilanCarbone(sol, r){
   const structImm  = lignes.reduce((a,l)=>a+l.imm,0);
   const struct50   = lignes.reduce((a,l)=>a+l.cinq,0);
 
+  // Une couche mise en œuvre en plusieurs passes ne compte qu'une fois au bilan :
+  // on regroupe par matériau et par rôle, en gardant trace du nombre de passes.
+  const cumul = (cle) => {
+    const g = [];
+    for(const l of lignes){
+      const k = cle(l);
+      const e = g.find(x => x.k === k);
+      if(e){ e.ep += l.ep; e.epc += l.epc; e.imm += l.imm; e.cinq += l.cinq; e.passes++; }
+      else g.push({k, mat:l.mat, role:l.role.replace(/ \d+\/\d+$/, ''), produit:l.produit,
+                   dvr:l.dvr, R:l.R, h:l.h, ep:l.ep, epc:l.epc, imm:l.imm, cinq:l.cinq,
+                   ghost:l.ghost, passes:1});
+    }
+    return g;
+  };
+  const postes = cumul(l => l.mat + '|' + l.role.replace(/ \d+\/\d+$/, ''));  // détail par couche
+  const parMateriau = cumul(l => l.mat);                                     // choix des produits
+
   const epDeb = r.total/100;
   const pr = sol.pctReutil/100;
   const dReu = D.deblais[0], dSto = D.deblais[1];
@@ -601,7 +618,7 @@ function bilanCarbone(sol, r){
 
   const plate = sol.pfExistante ? 0 : (D.pfco2[PF[sol.pf]] || 0);
 
-  return {lignes, structImm, struct50, deblais, debReu, debSto, epDeb, plate,
+  return {lignes, postes, parMateriau, structImm, struct50, deblais, debReu, debSto, epDeb, plate,
           totImm: structImm + deblais + plate,
           tot50 : struct50  + deblais + plate};
 }
@@ -831,8 +848,9 @@ function renderRail(){
     <div class="field">
       <span class="legend">Produits retenus par couche</span>
       <table class="mini"><thead><tr><th>Couche</th><th>Produit</th><th class="n">kgCO₂e/m²</th></tr></thead><tbody>
-        ${co2.lignes.map(l=>`<tr>
-          <td><span class="swatch" style="background:${FAM_FILL[famOf(l.mat)]}"></span>${matLink(l.mat)} <span class="num" style="color:var(--ink3)">${l.ghost?fr(sol.epES,1):l.ep} cm</span></td>
+        ${co2.parMateriau.map(l=>`<tr>
+          <td><span class="swatch" style="background:${FAM_FILL[famOf(l.mat)]}"></span>${matLink(l.mat)}
+            <span class="num" style="color:var(--ink3)">${l.ghost?fr(sol.epES,1):l.ep} cm${l.passes>1?` · ${l.passes} couches`:''}</span></td>
           <td><select data-mat="${esc(l.mat)}" class="pSel">${produitsPour(l.mat).map(p=>`<option ${p===l.produit?'selected':''}>${esc(p)}</option>`).join('')}</select></td>
           <td class="n">${fr(l.cinq,1)}</td></tr>`).join('')}
       </tbody></table>
@@ -1153,7 +1171,7 @@ function sectionCarbone(rA, rB){
                 w > 7 ? `<span class="segval" style="color:${clair?'#14171A':'#fff'}">${fr(v,1)}</span>` : ''}</div>`;
       x += w;
     };
-    for(const l of c.lignes) pousser(seg(l), FAM_FILL[famOf(l.mat)], l.produit, famOf(l.mat)!=='bit');
+    for(const l of c.postes) pousser(seg(l), FAM_FILL[famOf(l.mat)], l.produit, famOf(l.mat)!=='bit');
     pousser(c.deblais, '#E0A80B', "Déblais", true);
     pousser(c.plate, '#5E655D', "Création de plate-forme", false);
     return `<div class="barrow">
@@ -1226,9 +1244,10 @@ function sectionDetail(rA, rB){
       <table class="det">
         <thead><tr><th>Couche</th><th class="n">cm</th><th class="n">DVR</th><th class="n">Renouv.</th><th class="n">kgCO₂e/m²</th></tr></thead>
         <tbody>
-          ${c.lignes.map(l=>`<tr>
+          ${c.postes.map(l=>`<tr>
             <td><span class="swatch" style="background:${FAM_FILL[famOf(l.mat)]}"></span>${matLink(l.mat, l.produit)}
-              <span style="color:var(--ink3);font-size:10.5px"> · ${esc(l.role.replace('Couche de ',''))}</span></td>
+              <span style="color:var(--ink3);font-size:10.5px"> · ${esc(l.role.replace('Couche de ',''))}${
+                l.passes>1?` en ${l.passes} couches`:''}</span></td>
             <td class="n">${l.ghost?fr(r.sol.epES,1):l.ep}</td><td class="n">${l.dvr}</td>
             <td class="n">×${fr(l.R,1)}</td><td class="n">${fr(l.cinq,1)}</td></tr>`).join('')}
           <tr class="sub"><td>Déblais — ${fr(c.epDeb*100)} cm, ${fr(r.sol.pctReutil)} % réutilisés</td>

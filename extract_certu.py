@@ -88,7 +88,7 @@ def parse_str(path):
                  'aGel': r.single(), 'bGel': r.single(),
                  'young': r.single(), 'poisson': r.single(),
                  'epsilon': r.single(), 'sigma': r.single()}
-            r.comment()
+            m['comment'] = r.comment()
             materiaux.append(m)
 
         elif t.strip() == "":
@@ -116,7 +116,7 @@ def parse_mts(path):
             if t == "Matériau":
                 m.update(young=r.single(), poisson=r.single(),
                          epsilon=r.single(), sigma=r.single())
-            r.comment()
+            m['comment'] = r.comment()
             mats.append(m)
 
         elif t == "MatériauComposé":

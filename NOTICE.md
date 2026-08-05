@@ -20,6 +20,17 @@ diffusé sous licence propriétaire puis libéré sous GPL.
 | Indice de gel admissible et de référence | `ModuleMain.bas` — `CalculerIndiceGelAdm`, `CalculerIndiceGelRef`, `CalculerQng`, `CalculerQg` |
 | 84 stations météo de référence | `ModuleMain.bas` — `RemplirLesStationsMeteo` |
 | Épaisseur du lit de pose, constantes de types de voie et de structure | `ModuleMain.bas` |
+| Textes d'aide des sept onglets de saisie | `OngletVoie.rtf`, `OngletTrafic.rtf`, `OngletCAM.rtf`, `OngletStructure.rtf`, `OngletPlateforme.rtf`, `OngletCouche de Surface.rtf`, `OngletGel.rtf` |
+| Notice de chaque matériau (norme, classe, conditions d'emploi) | commentaires RTF de `Certu.str` et `Certu.mts` |
+| Note de chaque structure type (minimum technologique, épaisseurs retenues) | commentaires RTF de `Certu.str` |
+
+Deux écarts assumés sur ces textes, tracés dans `tools/aide.py` :
+
+- les tableaux et abaques de l'aide d'origine étaient des **images incorporées au RTF** ;
+  ils ne sont pas récupérables en texte, et les notices concernées portent une mention
+  renvoyant au guide technique du CERTU ;
+- la chaîne de test `TTTest`, restée dans la notice de l'enduit superficiel, est retirée
+  à la construction. C'est la seule correction appliquée au contenu d'origine.
 
 Les fichiers binaires du Cerema ne sont pas redistribués dans ce dépôt : ils sont
 récupérés à la construction depuis le dépôt d'origine (voir README).

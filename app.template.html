@@ -151,6 +151,42 @@ input:hover,select:hover{border-color:var(--ink2)}
 .note{font-size:11.5px;color:var(--ink2);border-left:2px solid var(--rule);padding:2px 0 2px 10px;margin-top:12px}
 .note b{font-weight:600}
 
+/* notices reprises du logiciel d'origine */
+.aidebox{margin-top:14px;border:1px solid var(--rule);background:#fff;border-radius:2px}
+.aidebox > summary{
+  cursor:pointer;list-style:none;padding:7px 10px;font-size:11.5px;color:var(--ink2);
+  display:flex;gap:8px;align-items:center
+}
+.aidebox > summary::-webkit-details-marker{display:none}
+.aidebox > summary::before{
+  content:"?";font-family:var(--mono);font-size:9px;width:15px;height:15px;flex:0 0 auto;
+  border:1px solid var(--rule);border-radius:50%;display:inline-flex;align-items:center;justify-content:center;color:var(--ink3)
+}
+.aidebox > summary:hover{color:var(--ink)}
+.aidebox[open] > summary{border-bottom:1px solid var(--rule2);color:var(--ink)}
+.aidebox[open] > summary::before{background:var(--ink);color:#fff;border-color:var(--ink)}
+.doc{padding:8px 12px 12px;font-size:12px;line-height:1.5;color:var(--ink2);max-height:330px;overflow:auto}
+.doc h4{margin:14px 0 5px;font-size:11.5px;color:var(--ink);font-weight:600}
+.doc h4:first-child{margin-top:0}
+.doc p{margin:0 0 8px}
+.doc ul{margin:0 0 8px;padding-left:15px}
+.doc li{margin-bottom:5px}
+.doc p.perdu,.doc .src{
+  font-size:11px;color:var(--ink3);border-top:1px solid var(--rule2);padding-top:8px;margin-top:10px
+}
+.doc .src{font-family:var(--mono);font-size:9.5px;letter-spacing:.1em;text-transform:uppercase}
+
+button.matlink{
+  background:none;border:0;padding:0;font:inherit;color:inherit;cursor:pointer;text-align:left;
+  border-bottom:1px dotted var(--rule)
+}
+button.matlink:hover{border-bottom-color:var(--ink);color:var(--ink)}
+svg text.matlink{cursor:pointer}
+svg text.matlink:hover tspan{text-decoration:underline}
+
+.fiche .id{font-family:var(--mono);font-size:11px;color:var(--ink3);letter-spacing:.06em}
+.fiche table.det{margin-bottom:16px}
+
 table.mini{width:100%;border-collapse:collapse;margin-top:10px;font-size:11.5px}
 table.mini th{text-align:left;font-family:var(--mono);font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;
   color:var(--ink3);font-weight:500;padding:0 6px 4px 0;border-bottom:1px solid var(--rule)}
@@ -189,9 +225,13 @@ svg.coupe{display:block;width:100%;height:auto}
 .barrow{display:grid;grid-template-columns:26px 1fr 132px;gap:12px;align-items:center;padding:9px 0;border-bottom:1px solid var(--rule2)}
 .barrow:last-child{border-bottom:0}
 .barrow .who{font-family:var(--mono);font-size:12px;font-weight:600}
-.bartrack{position:relative;height:26px;background:#fff;border:1px solid var(--rule2)}
+.bartrack{position:relative;height:30px;background:#fff;border:1px solid var(--rule2)}
 .barseg{position:absolute;top:0;bottom:0;border-right:1px solid rgba(255,255,255,.55)}
 .barseg:last-child{border-right:0}
+.barseg .segval{
+  position:absolute;left:0;right:0;top:50%;transform:translateY(-50%);text-align:center;
+  font-family:var(--mono);font-size:10px;font-variant-numeric:tabular-nums;pointer-events:none
+}
 .barval{text-align:right;font-family:var(--mono);font-variant-numeric:tabular-nums;font-size:13px}
 .barval .u{font-size:10px;color:var(--ink3);display:block;letter-spacing:.06em}
 
@@ -286,6 +326,11 @@ dialog .db{padding:16px 18px;max-height:64vh;overflow:auto}
     </div>
   </div>
 </div>
+
+<dialog id="dlgMat">
+  <div class="dh"><h3 id="matTitre"></h3><button class="btn ghost" onclick="dlgMat.close()">Fermer</button></div>
+  <div class="db fiche" id="matBody"></div>
+</dialog>
 
 <dialog id="dlgBase">
   <div class="dh"><h3>Base carbone des produits</h3><button class="btn ghost" onclick="dlgBase.close()">Fermer</button></div>
@@ -406,6 +451,7 @@ const state = {
   sol:'A',
   A:nouvelleSolution(),
   B:Object.assign(nouvelleSolution(), {famille:1, ti:40, structIdx:null}),
+  horizon:'50',
   projet:{nom:"", phase:"AVP", indice:"A", surface:1000, auteur:"", date:new Date().toISOString().slice(0,10)},
   open:{1:true,2:true,3:true,4:true,5:false,6:true,7:false},
 };
@@ -569,6 +615,92 @@ const esc = s => String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&g
 const el = (h) => { const t=document.createElement('template'); t.innerHTML=h.trim(); return t.content.firstElementChild; };
 
 /* ================================================================
+   5 bis. Documentation reprise du logiciel d'origine
+   ================================================================ */
+const SRC_CERTU = "Texte du logiciel Struct-Urb — CERTU / Cerema";
+
+/** Bloc dépliant portant l'aide d'un onglet du logiciel d'origine. */
+function aideBox(cles, titre){
+  const ks = [].concat(cles).filter(k => D.aide && D.aide[k]);
+  if(!ks.length) return '';
+  const corps = ks.map(k =>
+    (ks.length > 1 ? `<h4>${esc(D.aide[k].t)}</h4>` : '') + D.aide[k].h).join('');
+  return `<details class="aidebox"><summary>${esc(titre || D.aide[ks[0]].t)}</summary>
+    <div class="doc">${corps}<div class="src">${SRC_CERTU}</div></div></details>`;
+}
+
+/** Bloc dépliant portant la note d'une structure type. */
+function noteStructure(st){
+  if(!st || !st.c) return '';
+  return `<details class="aidebox"><summary>Note sur ${esc(st.n)}</summary>
+    <div class="doc">${st.c}<div class="src">${SRC_CERTU}</div></div></details>`;
+}
+
+/** Lien ouvrant la fiche d'un matériau. */
+const matLink = (mat, texte) =>
+  `<button class="matlink" data-m="${esc(mat)}">${esc(texte == null ? mat : texte)}</button>`;
+
+/** Cherche un matériau dans les deux catalogues. */
+function materiau(mat){
+  const k = mat === 'LitPose' ? null : mat;
+  if(k && D.matsurf[k]) return Object.assign({k, ou:"couche de surface"}, D.matsurf[k]);
+  if(k && D.matsurf[k + '*']) return Object.assign({k, ou:"couche de surface"}, D.matsurf[k + '*']);
+  if(k && D.matbf[k]) return Object.assign({k, ou:"assise"}, D.matbf[k]);
+  if(mat === 'LitPose') return {k:'LitPose', nom:"Lit de pose", ou:"pose des pavés et dalles",
+    c:`<p>Lit de pose de ${EP_LIT_POSE} cm, épaisseur fixée par le catalogue. Les conditions de mise en œuvre font l'objet de la norme NF P 98-335.</p>`};
+  return null;
+}
+
+function ouvrirFiche(mat){
+  const m = materiau(mat);
+  if(!m) return;
+  const carac = [];
+  const add = (k, v, u) => { if(v != null && v !== 0 && v !== '') carac.push([k, v + (u || '')]); };
+  add("Norme", m.norme); add("Classe ou qualité", m.q);
+  add("Module d'Young", m.E ? fr(m.E) : null, " MPa");
+  add("Coefficient de Poisson", m.nu);
+  add("ε₆ (déformation admissible)", m.eps ? fr(m.eps) : null, " µdef");
+  add("σ₆ (contrainte admissible)", m.sig ? fr(m.sig) : null, " MPa");
+  add("Coefficient de gel a", m.a); add("Coefficient de gel b", m.b);
+
+  const prods = D.map[mat] || [];
+  const lignesProd = prods.map(n => {
+    const p = prod(n);
+    return p ? `<tr><td>${esc(n)}</td><td class="n">${fr(p.h,1)}</td><td class="n">${p.dvr}</td>
+      <td class="n">${fr(p.h*50/p.dvr,1)}</td></tr>` : '';
+  }).join('');
+
+  // matériau composé : compositions possibles par épaisseur préconisée
+  const compos = m.comp ? `
+    <div class="eyebrow" style="margin:18px 0 6px">Compositions au catalogue</div>
+    <table class="det"><thead><tr><th class="n" style="width:74px;padding-right:16px">Épaisseur</th>
+      <th>Composition, du roulement vers la liaison</th></tr></thead>
+    <tbody>${m.comp.map(c=>`<tr><td class="n" style="padding-right:16px">${c[0]} cm</td><td>${
+      c.slice(1).map(x=>`${matLink(x[1])} <span class="num" style="color:var(--ink3)">${x[0]} cm</span>`).join(' sur ')
+    }</td></tr>`).join('')}</tbody></table>` : '';
+
+  document.getElementById('matTitre').textContent = m.nom || mat;
+  document.getElementById('matBody').innerHTML = `
+    <div class="id">${esc(mat)} · ${esc(m.ou)}</div>
+    ${carac.length ? `<table class="det" style="margin-top:12px"><tbody>
+      ${carac.map(c=>`<tr><td>${c[0]}</td><td class="n">${esc(String(c[1]))}</td></tr>`).join('')}
+    </tbody></table>` : ''}
+    ${m.c ? `<div class="doc" style="padding:0;max-height:none">${m.c}
+      <div class="src">${SRC_CERTU}</div></div>`
+          : `<p style="font-size:12px;color:var(--ink3);margin:12px 0 0">Le catalogue du CERTU ne comporte pas de notice rédigée pour ce matériau.</p>`}
+    ${compos}
+    ${lignesProd ? `<div class="eyebrow" style="margin:18px 0 6px">Produits disponibles au bilan carbone</div>
+      <table class="det"><thead><tr><th>Produit</th><th class="n">kgCO₂e/m³</th><th class="n">DVR</th>
+      <th class="n">m³ à 50 ans</th></tr></thead><tbody>${lignesProd}</tbody></table>` : ''}`;
+  document.getElementById('dlgMat').showModal();
+}
+
+document.addEventListener('click', e => {
+  const b = e.target.closest('[data-m]');
+  if(b) ouvrirFiche(b.getAttribute('data-m'));
+});
+
+/* ================================================================
    6. Volet de saisie
    ================================================================ */
 function renderRail(){
@@ -598,7 +730,8 @@ function renderRail(){
         <button data-v="2" aria-pressed="${sol.qualite===2}">Q2 — difficile</button>
       </div>
       <div class="hint">Q2 majore les épaisseurs (chantier contraint, contrôles réduits).</div>
-    </div>`));
+    </div>
+    ${aideBox('voie')}`));
 
   /* — 2 · Trafic — */
   const msgHtml = r.msgs.filter(m=>m.t!=='info').map(m=>
@@ -626,7 +759,8 @@ function renderRail(){
       ${r.neTh?`<div class="r"><span class="k">NE de calcul au catalogue</span><span class="v">${fr(r.neTh)}</span></div>`:''}
       ${msgHtml}
     </div>
-    <div class="note">NE = 365 × T<sub>i</sub> × [ n + c·n(n−1)/2 ] × CAM, formule du catalogue des structures types de chaussées urbaines.</div>`));
+    <div class="note">NE = 365 × T<sub>i</sub> × [ n + c·n(n−1)/2 ] × CAM, formule du catalogue des structures types de chaussées urbaines.</div>
+    ${aideBox(['trafic','cam'], "Trafic et coefficient d'agressivité")}`));
 
   /* — 3 · Structure — */
   const dispo = structuresDispo(sol);
@@ -651,11 +785,13 @@ function renderRail(){
         : `<div class="note">Aucune structure de cette famille n'est admise pour ce type de voie.</div>`}
     </div>
     ${st?`<div class="readout">
-      <div class="r"><span class="k">Surface</span><span class="v">${esc(st.s)}</span></div>
-      <div class="r"><span class="k">Base</span><span class="v">${esc(st.b)}</span></div>
-      <div class="r"><span class="k">Fondation</span><span class="v">${esc(st.f)}</span></div>
+      <div class="r"><span class="k">Surface</span><span class="v">${st.s==='Aucune'?'Aucune':matLink(st.s.trim())}</span></div>
+      <div class="r"><span class="k">Base</span><span class="v">${matLink(st.b)}</span></div>
+      <div class="r"><span class="k">Fondation</span><span class="v">${st.f==='Aucune'?'Aucune':matLink(st.f)}</span></div>
       <div class="r"><span class="k">Risque de calcul</span><span class="v">${st.r} %</span></div>
-    </div>`:''}`));
+      <div class="r"><span class="k">Domaine d'emploi</span><span class="v">${fr(st.ne[0])} à ${fr(st.ne[1])} NE</span></div>
+    </div>${noteStructure(st)}`:''}
+    ${aideBox('structure')}`));
 
   /* — 4 · Plate-forme — */
   rail.appendChild(step(4, "Plate-forme", PF[sol.pf], null, `
@@ -671,7 +807,8 @@ function renderRail(){
         <button data-v="0" aria-pressed="${!sol.pfExistante}">Non, à créer</button>
       </div>
       <div class="hint">Si elle est à créer, ${D.pfco2[PF[sol.pf]]} kgCO₂e/m² sont ajoutés au bilan.</div>
-    </div>`));
+    </div>
+    ${aideBox('plateforme')}`));
 
   /* — 5 · Couche de surface — */
   if(r.compoOpts && r.compoOpts.length>1){
@@ -683,7 +820,8 @@ function renderRail(){
             <span>${c.slice(1).map(x=>`${x[1]} ${x[0]} cm`).join(' sur ')}</span>
             <span class="meta">${c.slice(1).map(x=>esc((D.matsurf[x[1]]||{}).nom||'')).join(' / ')}</span>
           </button>`).join('')}</div>
-      </div>`));
+      </div>
+      ${aideBox('surface')}`));
   }
 
   /* — 6 · Bilan carbone — */
@@ -694,7 +832,7 @@ function renderRail(){
       <span class="legend">Produits retenus par couche</span>
       <table class="mini"><thead><tr><th>Couche</th><th>Produit</th><th class="n">kgCO₂e/m²</th></tr></thead><tbody>
         ${co2.lignes.map(l=>`<tr>
-          <td><span class="swatch" style="background:${FAM_FILL[famOf(l.mat)]}"></span>${esc(l.mat)} <span class="num" style="color:var(--ink3)">${l.ghost?fr(sol.epES,1):l.ep} cm</span></td>
+          <td><span class="swatch" style="background:${FAM_FILL[famOf(l.mat)]}"></span>${matLink(l.mat)} <span class="num" style="color:var(--ink3)">${l.ghost?fr(sol.epES,1):l.ep} cm</span></td>
           <td><select data-mat="${esc(l.mat)}" class="pSel">${produitsPour(l.mat).map(p=>`<option ${p===l.produit?'selected':''}>${esc(p)}</option>`).join('')}</select></td>
           <td class="n">${fr(l.cinq,1)}</td></tr>`).join('')}
       </tbody></table>
@@ -751,7 +889,8 @@ function renderRail(){
       <div class="r"><span class="k">Indice de gel admissible de la chaussée</span><span class="v big">${r.gel.horsGel?'Hors gel':fr(r.gel.adm)+' °C·j'}</span></div>
       <div class="r ${r.gel.horsGel||r.gel.ok?'':'err'}"><span class="k">Résultat</span><span class="v">${r.gel.horsGel?'Sol non gélif':(r.gel.ok?'Vérification satisfaite':'Renforcer la couche de forme')}</span></div>
     </div>`:'<div class="note">Déterminez d\'abord les épaisseurs.</div>'}
-    `:'<div class="note">La vérification au gel/dégel compare l\'indice de gel admissible de la structure à l\'indice atmosphérique de référence corrigé de l\'effet d\'îlot de chaleur urbain.</div>'}`));
+    `:'<div class="note">La vérification au gel/dégel compare l\'indice de gel admissible de la structure à l\'indice atmosphérique de référence corrigé de l\'effet d\'îlot de chaleur urbain.</div>'}
+    ${aideBox('gel')}`));
 
   bindRail();
 }
@@ -961,7 +1100,7 @@ function coupeSVG(rA, rB){
       const lx = side==='L' ? x-8  : x+colW+8;
       t += `<path d="M ${side==='L'?x:x+colW} ${L.top+L.h/2} H ${lx}" stroke="#8D948B" stroke-width=".7"/>`;
       t += `<circle cx="${side==='L'?x:x+colW}" cy="${L.top+L.h/2}" r="1.6" fill="#14171A"/>`;
-      t += `<text x="${tx}" y="${L.y+3.5}" text-anchor="${anchor}" font-size="11.5" fill="#14171A">
+      t += `<text class="matlink" data-m="${esc(L.mat)}" x="${tx}" y="${L.y+3.5}" text-anchor="${anchor}" font-size="11.5" fill="#14171A">
               <tspan font-weight="600">${esc(L.mat)}</tspan>
               <tspan font-family="IBM Plex Mono, monospace" fill="#5E655D"> ${L.ghost?'~':''}${L.ep} cm</tspan></text>`;
     }
@@ -995,7 +1134,10 @@ function sectionCarbone(rA, rB){
     <div class="empty-state"><div class="big">Rien à comparer pour l'instant</div>
     Définissez au moins une solution complète pour voir le bilan.</div></section>`;
 
-  const max = Math.max(a?a.tot50:0, b?b.tot50:0) || 1;
+  const h50 = state.horizon === '50';                    // horizon retenu
+  const val = c => h50 ? c.tot50 : c.totImm;
+  const seg = l => h50 ? l.cinq : l.imm;
+  const max = Math.max(a?val(a):0, b?val(b):0) || 1;
   const surface = state.projet.surface || 0;
 
   const bar = (r, k, col) => {
@@ -1003,26 +1145,27 @@ function sectionCarbone(rA, rB){
     if(!c) return `<div class="barrow"><div class="who" style="color:${col}">${k}</div>
       <div class="bartrack"></div><div class="barval" style="color:var(--ink3)">—</div></div>`;
     let x = 0, segs = '';
-    for(const l of c.lignes){
-      const w = l.cinq/max*100;
-      segs += `<div class="barseg" style="left:${x}%;width:${w}%;background:${FAM_FILL[famOf(l.mat)]}"
-                title="${esc(l.mat)} — ${fr(l.cinq,1)} kgCO₂e/m²"></div>`;
+    const pousser = (v, fond, titre, clair) => {
+      if(v <= 0) return;
+      const w = v/max*100;
+      segs += `<div class="barseg" style="left:${x}%;width:${w}%;background:${fond}"
+                title="${esc(titre)} — ${fr(v,1)} kgCO₂e/m²">${
+                w > 7 ? `<span class="segval" style="color:${clair?'#14171A':'#fff'}">${fr(v,1)}</span>` : ''}</div>`;
       x += w;
-    }
-    if(c.deblais>0){ const w=c.deblais/max*100;
-      segs += `<div class="barseg" style="left:${x}%;width:${w}%;background:#E0A80B" title="Déblais — ${fr(c.deblais,1)}"></div>`; x+=w; }
-    if(c.plate>0){ const w=c.plate/max*100;
-      segs += `<div class="barseg" style="left:${x}%;width:${w}%;background:#5E655D" title="Plate-forme — ${fr(c.plate,1)}"></div>`; }
+    };
+    for(const l of c.lignes) pousser(seg(l), FAM_FILL[famOf(l.mat)], l.produit, famOf(l.mat)!=='bit');
+    pousser(c.deblais, '#E0A80B', "Déblais", true);
+    pousser(c.plate, '#5E655D', "Création de plate-forme", false);
     return `<div class="barrow">
       <div class="who" style="color:${col}">${k}</div>
       <div class="bartrack">${segs}</div>
-      <div class="barval">${fr(c.tot50,1)}<span class="u">kgCO₂e/m²</span></div>
+      <div class="barval">${fr(val(c),1)}<span class="u">kgCO₂e/m²</span></div>
     </div>`;
   };
 
   let verdict = '';
   if(a && b){
-    const d = b.tot50 - a.tot50, pct = a.tot50 ? d/a.tot50*100 : 0;
+    const d = val(b) - val(a), pct = val(a) ? d/val(a)*100 : 0;
     const gagnante = d<0 ? 'B' : (d>0 ? 'A' : null);
     const eco = Math.abs(d)*surface/1000;
     verdict = `<div class="verdict">
@@ -1032,10 +1175,10 @@ function sectionCarbone(rA, rB){
       <div class="cell"><div class="k">Sur ${fr(surface)} m² de projet</div><div class="v">${fr(eco,1)} <small>t CO₂e évitées</small></div></div>
     </div>`;
   } else {
-    const r = a?rA:rB, c = a||b;
+    const c = a||b;
     verdict = `<div class="verdict">
-      <div class="cell"><div class="k">Total 50 ans</div><div class="v">${fr(c.tot50,1)} <small>kgCO₂e/m²</small></div></div>
-      <div class="cell"><div class="k">Sur ${fr(surface)} m² de projet</div><div class="v">${fr(c.tot50*surface/1000,1)} <small>t CO₂e</small></div></div>
+      <div class="cell"><div class="k">Total ${h50?'50 ans':'à la pose'}</div><div class="v">${fr(val(c),1)} <small>kgCO₂e/m²</small></div></div>
+      <div class="cell"><div class="k">Sur ${fr(surface)} m² de projet</div><div class="v">${fr(val(c)*surface/1000,1)} <small>t CO₂e</small></div></div>
       <div class="cell"><div class="k">Comparaison</div><div class="v" style="font-size:14px;font-weight:500">Définissez la seconde solution</div></div>
     </div>`;
   }
@@ -1045,15 +1188,30 @@ function sectionCarbone(rA, rB){
   const used = new Set();
   [a,b].forEach(c=>{ if(c) c.lignes.forEach(l=>used.add(famOf(l.mat))); });
 
+  // rappel du poste structure seule, hors déblais et plate-forme
+  const seule = (r, k) => r.co2 ? `<span><b>${k}</b> structure seule ${
+    fr(h50 ? r.co2.struct50 : r.co2.structImm, 1)} kgCO₂e/m²</span>` : '';
+
   return `<section class="section">
-    <h3>Bilan carbone à 50 ans</h3>
-    <div class="sub">Émissions de la structure sur 50 ans, renouvellements des matériaux compris, déblais et création de plate-forme inclus.</div>
+    <h3>Bilan carbone</h3>
+    <div class="sub" style="display:flex;align-items:flex-start;gap:18px;flex-wrap:wrap">
+      <span style="flex:1;min-width:260px">${h50
+        ? "Émissions sur 50 ans, renouvellements des matériaux compris, déblais et création de plate-forme inclus."
+        : "Émissions de la construction seule, sans renouvellement, déblais et création de plate-forme inclus."}</span>
+      <span class="seg" id="fHorizon" style="width:210px;flex:0 0 auto">
+        <button data-v="imm" aria-pressed="${!h50}">Pose initiale</button>
+        <button data-v="50" aria-pressed="${h50}">50 ans</button>
+      </span>
+    </div>
     <div class="bars">${bar(rA,'A','var(--a)')}${bar(rB,'B','var(--b)')}</div>
     ${verdict}
     <div style="margin-top:14px;display:flex;flex-wrap:wrap;gap:14px;font-size:11px;color:var(--ink2)">
       ${fams.filter(f=>used.has(f[0])).map(f=>`<span><span class="swatch" style="background:${FAM_FILL[f[0]]}"></span>${f[1]}</span>`).join('')}
       <span><span class="swatch" style="background:#E0A80B"></span>Déblais</span>
       <span><span class="swatch" style="background:#5E655D"></span>Plate-forme</span>
+    </div>
+    <div style="margin-top:10px;display:flex;flex-wrap:wrap;gap:20px;font-size:11.5px;color:var(--ink2)">
+      ${seule(rA,'A')}${seule(rB,'B')}
     </div>
   </section>`;
 }
@@ -1069,7 +1227,7 @@ function sectionDetail(rA, rB){
         <thead><tr><th>Couche</th><th class="n">cm</th><th class="n">DVR</th><th class="n">Renouv.</th><th class="n">kgCO₂e/m²</th></tr></thead>
         <tbody>
           ${c.lignes.map(l=>`<tr>
-            <td><span class="swatch" style="background:${FAM_FILL[famOf(l.mat)]}"></span>${esc(l.produit)}
+            <td><span class="swatch" style="background:${FAM_FILL[famOf(l.mat)]}"></span>${matLink(l.mat, l.produit)}
               <span style="color:var(--ink3);font-size:10.5px"> · ${esc(l.role.replace('Couche de ',''))}</span></td>
             <td class="n">${l.ghost?fr(r.sol.epES,1):l.ep}</td><td class="n">${l.dvr}</td>
             <td class="n">×${fr(l.R,1)}</td><td class="n">${fr(l.cinq,1)}</td></tr>`).join('')}
@@ -1118,6 +1276,11 @@ function cartouche(rA, rB){
 
 function bindSheet(){
   const p = state.projet;
+  const hz = document.getElementById('fHorizon');
+  if(hz) hz.addEventListener('click', e=>{
+    const b = e.target.closest('button'); if(!b) return;
+    state.horizon = b.dataset.v; renderSheet();
+  });
   const on = (id, fn) => { const n = document.getElementById(id); if(n) n.addEventListener('input', ()=>fn(n.value)); };
   on('cNom', v=>p.nom=v); on('cPhase', v=>p.phase=v); on('cAuteur', v=>p.auteur=v);
   on('cDate', v=>p.date=v); on('cInd', v=>p.indice=v);

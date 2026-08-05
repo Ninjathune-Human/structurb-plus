@@ -5,16 +5,21 @@ Assemble le bundle de donnees consomme par l'application.
 Entrees  : build/certu.json          (sortie de tools/extract_certu.py)
            data/base-carbone.json    (facteurs d'emission, editable)
            vendor/structurb/ModuleMain.bas  (stations meteo de reference)
+           vendor/structurb/Onglet*.rtf     (textes d'aide du CERTU)
 Sortie   : src/data.js
 
 Usage : python tools/build_data.py
 """
 import json, os, re, sys
 
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import aide
+
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 CERTU = os.path.join(ROOT, 'build', 'certu.json')
 CARBONE = os.path.join(ROOT, 'data', 'base-carbone.json')
-BAS = os.path.join(ROOT, 'vendor', 'structurb', 'ModuleMain.bas')
+VENDOR = os.path.join(ROOT, 'vendor', 'structurb')
+BAS = os.path.join(VENDOR, 'ModuleMain.bas')
 OUT = os.path.join(ROOT, 'src', 'data.js')
 
 
@@ -58,20 +63,24 @@ def main():
             'ne': [s['neMin'], s['neMax']],
             'v': [s['vDes'], s['vDis'], s['vPL'], s['vBus'],
                   s['vParking'], s['gDis'], s['gPL']],
+            'c': aide.rtf_html(s.get('comment')),
             't': tabs})
 
     # --- materiaux de base et de fondation
     matbf = {m['abrege'].strip(): {
         'nom': m['nom'].strip(), 'E': f(m['young']), 'nu': f(m['poisson']),
         'eps': f(m['epsilon']), 'sig': f(m['sigma']),
-        'a': f(m['aGel']), 'b': f(m['bGel']), 'q': m['qual'].strip()}
+        'a': f(m['aGel']), 'b': f(m['bGel']), 'q': m['qual'].strip(),
+        'norme': m['norme'].strip(), 'c': aide.rtf_html(m.get('comment'))}
         for m in certu['materiaux']}
 
     # --- materiaux de surface ; " Enrobés " (giratoires) est stocke sous "Enrobés*"
     matsurf = {}
     for m in certu['matsurf']:
         k = m['abrege'].strip()
-        e = {'nom': m['nom'].strip(), 'a': f(m['aGel']), 'b': f(m['bGel'])}
+        e = {'nom': m['nom'].strip(), 'a': f(m['aGel']), 'b': f(m['bGel']),
+             'norme': m.get('norme', '').strip(), 'q': m.get('qual', '').strip(),
+             'c': aide.rtf_html(m.get('comment'))}
         if m['type'] == 'MatériauComposé':
             e['comp'] = [[c[0]] + [[c[i][0], c[i][1].strip()] for i in (1, 2, 3) if c[i][0] > 0]
                          for c in m['compositions']]
@@ -90,13 +99,14 @@ def main():
         'deblais': carb['deblais'],
         'pfco2': carb['plateforme_kgco2_m2'],
         'map': carb['correspondances'],
+        'aide': aide.charger_onglets(VENDOR),
     }
 
     os.makedirs(os.path.dirname(OUT), exist_ok=True)
     js = "const D=" + json.dumps(data, ensure_ascii=False, separators=(',', ':')) + ";"
     open(OUT, 'w', encoding='utf-8').write(js)
-    print("src/data.js : %d structures, %d produits, %d Ko"
-          % (len(structs), len(carb['produits']), len(js) // 1024))
+    print("src/data.js : %d structures, %d produits, %d textes d'aide, %d Ko"
+          % (len(structs), len(carb['produits']), len(data['aide']), len(js) // 1024))
 
 
 if __name__ == '__main__':

@@ -1,0 +1,2 @@
+# Conversion des textes d'aide RTF du logiciel d'origine
+striprtf>=0.0.26

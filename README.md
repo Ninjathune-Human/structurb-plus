@@ -6,7 +6,7 @@ Reprise du moteur de calcul de **Struct-Urb** (CERTU / Cerema, Visual Basic 6, G
 non maintenu) et du catalogue des structures types de chaussées urbaines, avec un
 module d'analyse du cycle de vie ajouté.
 
-**[→ Ouvrir l'application](https://ninjathune-Human.github.io/structurb-plus/)**
+**[→ Ouvrir l'application](https://VOTRE-ORG.github.io/structurb-plus/)**
 
 ---
 
@@ -20,10 +20,16 @@ module d'analyse du cycle de vie ajouté.
   technologique et du dépassement du maximum pratique.
 - **Gel/dégel** — indice de gel admissible de la structure comparé à l'indice
   atmosphérique de référence corrigé, sur les 84 stations météo du logiciel d'origine.
-- **Carbone** — émissions sur 50 ans, renouvellements des matériaux compris, déblais
-  et création de plate-forme inclus, avec choix du produit pour chaque couche.
+- **Carbone** — émissions à la pose et sur 50 ans, renouvellements des matériaux
+  compris, déblais et création de plate-forme inclus, avec choix du produit pour chaque
+  couche. Contribution de chaque matériau lisible sur la barre, et rappel du poste
+  structure seule hors déblais et plate-forme.
 - **Comparaison** — deux solutions côte à côte sur une règle graduée commune, écart de
   terrassement et écart d'émissions chiffrés.
+- **Documentation intégrée** — les textes explicatifs du logiciel d'origine sont repris :
+  une notice dépliante à chaque étape de saisie, une note par structure type, et une
+  fiche par matériau (norme, classe, module, conditions d'emploi) accessible en cliquant
+  son nom sur la coupe ou dans les tableaux.
 
 Étude enregistrable en JSON, feuille de résultats imprimable avec cartouche.
 
@@ -39,6 +45,7 @@ et relancez la chaîne de construction :
 
 ```bash
 git clone https://github.com/CEREMA/territoires-ville.StructUrb.git vendor/structurb
+pip install -r requirements.txt
 
 python tools/extract_certu.py vendor/structurb --out build/certu.json
 python tools/build_data.py      # -> src/data.js
@@ -56,6 +63,7 @@ src/app.template.html     gabarit : interface et moteur de calcul
 src/data.js               bundle de données généré (ne pas éditer à la main)
 data/base-carbone.json    facteurs d'émission — c'est ici qu'on met à jour l'ACV
 tools/extract_certu.py    décodage des binaires Certu.str et Certu.mts
+tools/aide.py             conversion des textes d'aide RTF en HTML
 tools/build_data.py       assemblage du bundle
 tools/build.py            injection dans le gabarit
 tests/test.js             parcours exhaustif du catalogue en navigateur headless
@@ -79,6 +87,9 @@ connaissance du code n'est nécessaire pour faire évoluer les données environn
   retenus par défaut pour le calcul carbone, signalés par `~` sur la coupe.
 - Le catalogue CERTU date de 1998. Il ne couvre ni les forts taux d'agrégats d'enrobés
   ni les matériaux biosourcés.
+- Les **tableaux et abaques** de l'aide d'origine (classification de gélivité, abaques
+  de déflexion) étaient des images incorporées au RTF : ils ne sont pas repris et les
+  notices concernées le signalent.
 
 ## Provenance et licence
 

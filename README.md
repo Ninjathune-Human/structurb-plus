@@ -6,7 +6,7 @@ Reprise du moteur de calcul de **Struct-Urb** (CERTU / Cerema, Visual Basic 6, G
 non maintenu) et du catalogue des structures types de chaussées urbaines, avec un
 module d'analyse du cycle de vie ajouté.
 
-**[→ Ouvrir l'application](https://Ninjatune-Human.github.io/structurb-plus/)**
+**[→ Ouvrir l'application](https://Ninjathune-Human.github.io/structurb-plus/)**
 
 ---
 

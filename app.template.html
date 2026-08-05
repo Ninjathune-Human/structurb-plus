@@ -1,0 +1,1214 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>StructUrb+ — dimensionnement de chaussée urbaine &amp; bilan carbone</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:ital,wdth,wght@0,75..125,400..800;1,75..125,400..700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* ============================ jetons ============================ */
+:root{
+  --paper:#E6E8E3; --sheet:#F6F7F4; --panel:#EFF1EC;
+  --ink:#14171A; --ink2:#5E655D; --ink3:#8D948B;
+  --rule:#C3C8C0; --rule2:#DCE0D9;
+  --a:#0B4F6C; --b:#5A6B2F;
+  --signal:#E0A80B; --bad:#A8322A; --ok:#2F6B3C;
+  --sans:'Archivo','Helvetica Neue',Helvetica,Arial,sans-serif;
+  --mono:'IBM Plex Mono',ui-monospace,'SF Mono',Menlo,Consolas,monospace;
+  --pad:18px;
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{
+  margin:0; background:var(--paper); color:var(--ink);
+  font-family:var(--sans); font-size:14px; line-height:1.45;
+  -webkit-font-smoothing:antialiased;
+}
+button,input,select,textarea{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--signal); outline-offset:2px}
+
+/* typographie ---------------------------------------------------- */
+.display{font-family:var(--sans);font-stretch:118%;font-weight:700;letter-spacing:-.01em}
+.eyebrow{
+  font-family:var(--mono);font-size:10px;font-weight:500;letter-spacing:.16em;
+  text-transform:uppercase;color:var(--ink3)
+}
+.num{font-family:var(--mono);font-variant-numeric:tabular-nums;font-feature-settings:"tnum"}
+
+/* ============================ ossature ========================== */
+#app{display:flex;flex-direction:column;height:100%}
+
+.topbar{
+  display:flex;align-items:stretch;gap:0;
+  border-bottom:1px solid var(--ink); background:var(--paper);
+  flex:0 0 auto;
+}
+.brand{display:flex;align-items:center;gap:12px;padding:11px 18px;border-right:1px solid var(--rule)}
+.brand .mark{width:22px;height:22px;flex:0 0 auto}
+.brand h1{margin:0;font-size:16px;font-stretch:122%;font-weight:800;letter-spacing:-.02em}
+.brand .sub{font-family:var(--mono);font-size:10px;color:var(--ink3);letter-spacing:.1em;text-transform:uppercase}
+.topbar .spacer{flex:1}
+.topbar .tools{display:flex;align-items:center;gap:6px;padding:0 14px}
+
+.btn{
+  border:1px solid var(--rule);background:transparent;border-radius:2px;
+  padding:6px 11px;font-size:12.5px;cursor:pointer;transition:background .12s,border-color .12s;
+}
+.btn:hover{background:#fff;border-color:var(--ink2)}
+.btn.primary{background:var(--ink);color:var(--sheet);border-color:var(--ink)}
+.btn.primary:hover{background:#000}
+.btn.ghost{border-color:transparent}
+.btn.ghost:hover{border-color:var(--rule)}
+
+.main{display:flex;flex:1;min-height:0}
+
+/* ---------------------------- volet gauche --------------------- */
+.rail{
+  width:400px;flex:0 0 400px;border-right:1px solid var(--ink);
+  background:var(--panel);display:flex;flex-direction:column;min-height:0;
+}
+.solswitch{display:flex;border-bottom:1px solid var(--ink);flex:0 0 auto}
+.solswitch button{
+  flex:1;border:0;background:transparent;padding:11px 8px;cursor:pointer;text-align:left;
+  border-right:1px solid var(--rule);position:relative;
+}
+.solswitch button:last-child{border-right:0}
+.solswitch button .lbl{display:block;font-family:var(--mono);font-size:10px;letter-spacing:.14em;color:var(--ink3);text-transform:uppercase}
+.solswitch button .val{display:block;font-size:13px;font-weight:600;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.solswitch button[aria-selected="true"]{background:var(--sheet)}
+.solswitch button[aria-selected="true"]::before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px}
+.solswitch button[data-sol="A"][aria-selected="true"]::before{background:var(--a)}
+.solswitch button[data-sol="B"][aria-selected="true"]::before{background:var(--b)}
+
+.railscroll{overflow-y:auto;flex:1;min-height:0}
+
+.step{border-bottom:1px solid var(--rule)}
+.step > summary{
+  list-style:none;cursor:pointer;padding:12px var(--pad);display:flex;align-items:baseline;gap:10px;
+}
+.step > summary::-webkit-details-marker{display:none}
+.step > summary:hover{background:var(--sheet)}
+.step .idx{font-family:var(--mono);font-size:11px;color:var(--ink3);width:14px;flex:0 0 auto}
+.step .ttl{font-size:13px;font-weight:600;letter-spacing:-.005em;flex:1}
+.step .chip{
+  font-family:var(--mono);font-size:10px;letter-spacing:.04em;padding:2px 6px;border-radius:2px;
+  background:var(--rule2);color:var(--ink2);white-space:nowrap;max-width:150px;overflow:hidden;text-overflow:ellipsis
+}
+.step .chip.warn{background:var(--signal);color:#2a2000}
+.step .chip.bad{background:var(--bad);color:#fff}
+.step[open] > summary{background:var(--sheet);border-bottom:1px solid var(--rule2)}
+.step .body{padding:6px var(--pad) 18px;background:var(--sheet)}
+
+.field{margin:12px 0 0}
+.field > label,.legend{display:block;font-size:11.5px;color:var(--ink2);margin-bottom:5px}
+.field .hint{font-size:11px;color:var(--ink3);margin-top:4px;font-family:var(--mono)}
+.field .hint.bad{color:var(--bad)}
+.field .hint.warn{color:#8a6300}
+
+input[type=text],input[type=number],select,textarea{
+  width:100%;border:1px solid var(--rule);background:#fff;border-radius:2px;padding:7px 8px;
+  font-size:13px;
+}
+input[type=number],input.numin{font-family:var(--mono);font-variant-numeric:tabular-nums}
+select{appearance:none;background-image:linear-gradient(45deg,transparent 50%,var(--ink2) 50%),linear-gradient(135deg,var(--ink2) 50%,transparent 50%);
+  background-position:calc(100% - 15px) 14px,calc(100% - 10px) 14px;background-size:5px 5px,5px 5px;background-repeat:no-repeat;padding-right:28px}
+input:hover,select:hover{border-color:var(--ink2)}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
+
+.seg{display:flex;flex-wrap:wrap;gap:0;border:1px solid var(--rule);border-radius:2px;overflow:hidden;background:#fff}
+.seg button{
+  flex:1;min-width:52px;border:0;border-right:1px solid var(--rule2);background:transparent;
+  padding:7px 4px;cursor:pointer;font-size:12px;
+}
+.seg button:last-child{border-right:0}
+.seg button:hover{background:var(--panel)}
+.seg button[aria-pressed="true"]{background:var(--ink);color:var(--sheet)}
+
+.opts{display:flex;flex-direction:column;gap:1px;border:1px solid var(--rule);border-radius:2px;background:var(--rule2);overflow:hidden}
+.opts button{
+  border:0;background:#fff;text-align:left;padding:8px 10px;cursor:pointer;font-size:12.5px;
+  display:flex;align-items:center;justify-content:space-between;gap:8px
+}
+.opts button:hover{background:var(--panel)}
+.opts button[aria-pressed="true"]{background:var(--ink);color:var(--sheet)}
+.opts button[aria-pressed="true"] .meta{color:#b9c0b8}
+.opts .meta{font-family:var(--mono);font-size:10.5px;color:var(--ink3)}
+
+.readout{border:1px solid var(--rule);border-radius:2px;background:#fff;margin-top:14px}
+.readout .r{display:flex;justify-content:space-between;align-items:baseline;gap:10px;padding:7px 10px;border-bottom:1px solid var(--rule2)}
+.readout .r:last-child{border-bottom:0}
+.readout .k{font-size:11.5px;color:var(--ink2)}
+.readout .v{font-family:var(--mono);font-size:13px;font-variant-numeric:tabular-nums}
+.readout .v.big{font-size:15px;font-weight:600}
+.readout .r.alert{background:#FDF6E3}
+.readout .r.alert .v{color:#8a6300}
+.readout .r.err{background:#FBEDEC}
+.readout .r.err .v{color:var(--bad)}
+
+.note{font-size:11.5px;color:var(--ink2);border-left:2px solid var(--rule);padding:2px 0 2px 10px;margin-top:12px}
+.note b{font-weight:600}
+
+table.mini{width:100%;border-collapse:collapse;margin-top:10px;font-size:11.5px}
+table.mini th{text-align:left;font-family:var(--mono);font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--ink3);font-weight:500;padding:0 6px 4px 0;border-bottom:1px solid var(--rule)}
+table.mini td{padding:5px 6px 5px 0;border-bottom:1px solid var(--rule2);vertical-align:middle}
+table.mini td.n{font-family:var(--mono);text-align:right;font-variant-numeric:tabular-nums;padding-right:0}
+table.mini select{padding:4px 20px 4px 6px;font-size:11.5px;background-position:calc(100% - 12px) 11px,calc(100% - 8px) 11px}
+.swatch{display:inline-block;width:9px;height:9px;border:1px solid var(--ink);margin-right:6px;vertical-align:-1px}
+
+/* ---------------------------- feuille -------------------------- */
+.sheetwrap{flex:1;overflow-y:auto;min-width:0;background:var(--paper);padding:22px}
+.sheet{
+  max-width:1080px;margin:0 auto;background:var(--sheet);border:1px solid var(--ink);
+  box-shadow:0 1px 0 var(--rule),0 12px 28px -22px rgba(0,0,0,.5);
+}
+.sheethead{display:flex;border-bottom:1px solid var(--ink)}
+.sheethead .col{flex:1;padding:14px 18px;border-right:1px solid var(--rule)}
+.sheethead .col:last-child{border-right:0}
+.sheethead .tag{display:flex;align-items:center;gap:7px}
+.sheethead .dot{width:9px;height:9px;border-radius:50%}
+.sheethead h2{margin:4px 0 0;font-size:19px;font-stretch:112%;font-weight:700;letter-spacing:-.02em}
+.sheethead .meta{font-family:var(--mono);font-size:11px;color:var(--ink2);margin-top:5px}
+.sheethead .empty{color:var(--ink3);font-weight:400;font-stretch:100%}
+
+.section{border-bottom:1px solid var(--rule);padding:16px 18px 20px}
+.section:last-child{border-bottom:0}
+.section > h3{
+  margin:0 0 2px;font-family:var(--mono);font-size:10px;letter-spacing:.16em;text-transform:uppercase;
+  color:var(--ink3);font-weight:500
+}
+.section > .sub{font-size:11.5px;color:var(--ink2);margin-bottom:14px}
+
+svg.coupe{display:block;width:100%;height:auto}
+
+/* barres carbone */
+.bars{margin-top:6px}
+.barrow{display:grid;grid-template-columns:26px 1fr 132px;gap:12px;align-items:center;padding:9px 0;border-bottom:1px solid var(--rule2)}
+.barrow:last-child{border-bottom:0}
+.barrow .who{font-family:var(--mono);font-size:12px;font-weight:600}
+.bartrack{position:relative;height:26px;background:#fff;border:1px solid var(--rule2)}
+.barseg{position:absolute;top:0;bottom:0;border-right:1px solid rgba(255,255,255,.55)}
+.barseg:last-child{border-right:0}
+.barval{text-align:right;font-family:var(--mono);font-variant-numeric:tabular-nums;font-size:13px}
+.barval .u{font-size:10px;color:var(--ink3);display:block;letter-spacing:.06em}
+
+.verdict{display:flex;flex-wrap:wrap;gap:0;border:1px solid var(--ink);margin-top:16px;background:#fff}
+.verdict .cell{flex:1;min-width:150px;padding:12px 14px;border-right:1px solid var(--rule)}
+.verdict .cell:last-child{border-right:0}
+.verdict .k{font-family:var(--mono);font-size:9.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink3)}
+.verdict .v{font-size:22px;font-stretch:112%;font-weight:700;letter-spacing:-.02em;margin-top:3px;font-variant-numeric:tabular-nums}
+.verdict .v small{font-size:12px;font-weight:500;color:var(--ink2);letter-spacing:0}
+.verdict .cell.hl{background:var(--signal)}
+.verdict .cell.hl .k{color:#5a4400}
+
+table.det{width:100%;border-collapse:collapse;font-size:12px;margin-top:4px}
+table.det th{text-align:left;font-family:var(--mono);font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--ink3);font-weight:500;padding:0 10px 6px 0;border-bottom:1px solid var(--ink)}
+table.det td{padding:6px 10px 6px 0;border-bottom:1px solid var(--rule2)}
+table.det td.n,table.det th.n{text-align:right;font-family:var(--mono);font-variant-numeric:tabular-nums;padding-right:0}
+table.det tr.tot td{border-top:1px solid var(--ink);border-bottom:0;font-weight:600;padding-top:8px}
+table.det tr.sub td{color:var(--ink2)}
+
+/* cartouche ----------------------------------------------------- */
+.cartouche{display:flex;flex-wrap:wrap;border-top:1px solid var(--ink);background:var(--panel)}
+.cartouche .c{flex:1 1 150px;padding:9px 14px;border-right:1px solid var(--rule)}
+.cartouche .c:last-child{border-right:0}
+.cartouche .k{font-family:var(--mono);font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink3)}
+.cartouche .v{font-size:12.5px;margin-top:2px}
+.cartouche input{border:0;background:transparent;padding:0;font-size:12.5px;width:100%;border-bottom:1px dotted var(--rule)}
+.cartouche input:hover{border-bottom-color:var(--ink2)}
+
+.empty-state{padding:60px 24px;text-align:center;color:var(--ink3)}
+.empty-state .big{font-size:15px;color:var(--ink2);margin-bottom:6px}
+
+dialog{border:1px solid var(--ink);border-radius:2px;background:var(--sheet);padding:0;max-width:820px;width:92vw}
+dialog::backdrop{background:rgba(20,23,26,.42)}
+dialog .dh{display:flex;justify-content:space-between;align-items:center;padding:13px 18px;border-bottom:1px solid var(--ink)}
+dialog .dh h3{margin:0;font-size:15px;font-stretch:112%;font-weight:700}
+dialog .db{padding:16px 18px;max-height:64vh;overflow:auto}
+
+@media (max-width:1080px){
+  .main{flex-direction:column}
+  .rail{width:auto;flex:0 0 auto;border-right:0;border-bottom:1px solid var(--ink);max-height:52vh}
+  .sheetwrap{padding:14px}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+@media print{
+  .topbar,.rail{display:none!important}
+  body,.sheetwrap{background:#fff}
+  .sheetwrap{padding:0;overflow:visible}
+  .sheet{border:0;box-shadow:none;max-width:none}
+  .section{break-inside:avoid}
+}
+</style>
+</head>
+<body>
+<div id="app">
+
+  <header class="topbar">
+    <div class="brand">
+      <svg class="mark" viewBox="0 0 22 22" aria-hidden="true">
+        <rect x="1" y="2"  width="20" height="4" fill="#14171A"/>
+        <rect x="1" y="7"  width="20" height="5" fill="#9C9384"/>
+        <rect x="1" y="13" width="20" height="6" fill="#C3C8C0"/>
+        <path d="M1 20h20" stroke="#14171A" stroke-width="1.4" stroke-dasharray="2 2"/>
+      </svg>
+      <div>
+        <h1>StructUrb<span style="color:var(--signal)">+</span></h1>
+        <div class="sub">Chaussées urbaines &amp; carbone</div>
+      </div>
+    </div>
+    <div class="spacer"></div>
+    <div class="tools">
+      <button class="btn ghost" id="btnBase">Base carbone</button>
+      <button class="btn ghost" id="btnCopy">Copier A → B</button>
+      <button class="btn ghost" id="btnImport">Ouvrir</button>
+      <button class="btn" id="btnExport">Enregistrer</button>
+      <button class="btn primary" id="btnPrint">Imprimer</button>
+      <input type="file" id="fileIn" accept=".json" hidden>
+    </div>
+  </header>
+
+  <div class="main">
+    <aside class="rail">
+      <div class="solswitch" role="tablist">
+        <button data-sol="A" role="tab" aria-selected="true"><span class="lbl">Solution A</span><span class="val" id="swA">—</span></button>
+        <button data-sol="B" role="tab" aria-selected="false"><span class="lbl">Solution B</span><span class="val" id="swB">—</span></button>
+      </div>
+      <div class="railscroll" id="rail"></div>
+    </aside>
+
+    <div class="sheetwrap">
+      <div class="sheet" id="sheet"></div>
+    </div>
+  </div>
+</div>
+
+<dialog id="dlgBase">
+  <div class="dh"><h3>Base carbone des produits</h3><button class="btn ghost" onclick="dlgBase.close()">Fermer</button></div>
+  <div class="db" id="baseBody"></div>
+</dialog>
+
+<script>/*__DATA__*/</script>
+<script>
+"use strict";
+
+/* ================================================================
+   1. Constantes reprises du code source CERTU / CEREMA (Struct-Urb)
+   ================================================================ */
+
+const VOIES = [
+  {id:1, k:'vDes',     nom:"Voie de desserte",                court:"Desserte",     idx:0},
+  {id:2, k:'vDis',     nom:"Voie de distribution",            court:"Distribution", idx:1},
+  {id:3, k:'vPL',      nom:"Voie principale à trafic lourd",  court:"Trafic lourd", idx:2},
+  {id:4, k:'vBus',     nom:"Voie réservée aux bus",           court:"Bus",          idx:3},
+  {id:5, k:'vParking', nom:"Aire de stationnement",           court:"Parking",      idx:4},
+  {id:6, k:'gDis',     nom:"Giratoire sur voie de distribution", court:"Giratoire dist.", idx:5},
+  {id:7, k:'gPL',      nom:"Giratoire sur voie à trafic lourd",  court:"Giratoire PL",    idx:6},
+];
+
+const FAMILLES = [
+  {id:1, nom:"Souple"},          {id:2, nom:"Bitumineuse"},
+  {id:3, nom:"Traitée aux liants hydrauliques"}, {id:4, nom:"Béton"},
+  {id:5, nom:"Mixte"},           {id:6, nom:"Pavés et dalles"},
+];
+
+const PF = ["PF1","PF2","PF2+","PF3"];
+const EP_LIT_POSE = 4;              // Public Const EpLitPose As Integer = 4
+const HIVERS = [{k:'HRE',nom:"Rigoureux exceptionnel"},{k:'HRNE',nom:"Rigoureux non exceptionnel"},{k:'HC',nom:"Courant"}];
+const AGGLO = [{c:1,nom:"< 100 000 hab."},{c:0.9,nom:"100 000 à 1 000 000 hab."},{c:0.8,nom:"> 1 000 000 hab."}];
+const SOLS  = [{id:3,nom:"Non gélif",p:0},{id:2,nom:"Peu gélif",p:0.4},{id:1,nom:"Très gélif",p:2}];
+
+// domaine de validite du trafic PL initial (DonnerMinMaxTraficIni)
+function domaineTrafic(v){
+  if(v===1) return {min:0,max:25,tmin:0,tmax:30};
+  if(v===2||v===6) return {min:25,max:150,tmin:20,tmax:170};
+  if(v===3||v===7) return {min:150,max:750,tmin:120,tmax:1000};
+  return {min:0,max:750,tmin:0,tmax:1000};
+}
+// CAM preconise (DonnerPrecMinMaxCAM)
+function domaineCAM(v, st){
+  const t = st ? st.cam : 1;
+  let o;
+  if(v===1)      o = {p:.1, min:.05, max:.4};
+  else if(v===2) o = t===1 ? {p:.1,min:.05,max:.6} : {p:.2,min:.1,max:.6};
+  else if(v===3) o = t===1 ? {p:.2,min:.1,max:.8}  : {p:.4,min:.2,max:1};
+  else if(v===6) o = {p:.5,min:.2,max:1};
+  else if(v===7) o = {p:1, min:.5,max:1.5};
+  else if(v===5) o = {p:.1,min:.05,max:.4};
+  else           o = {p:.5,min:.2,max:1};      // bus
+  o = Object.assign({}, o);
+  if(st && st.ts===1) o.p *= 2;                             // structure souple
+  if(st && st.ts===6 && st.b.toUpperCase()==='GNT') o.p *= 2; // pavés/dalles sur GNT
+  return o;
+}
+
+/* ---- trafic ---- */
+const traficCumule = (ti,ds,ca) => Math.round(365*ti*(ds + (ca/100*ds*(ds-1))/2));
+const nbEssieux    = (npl,cam)  => Math.round(npl*cam);
+
+// NE theorique immediatement superieur + indice de ligne (TrouverNEthEtInd)
+function neTheorique(ne, st){
+  let ind=0, ne0=st.ne[0];
+  for(let g=0; g<400; g++){
+    ind++;
+    const pas = Math.pow(10, String(ne0).length-1);
+    if(ne > ne0) ne0 += pas; else return {ne:ne0, ind:ind};
+  }
+  return null;
+}
+
+/* ---- lecture d'une ligne du catalogue ---- */
+function ligne(st, pfIndex, qualite, ind){
+  const tab = st.t[pfIndex*2 + (qualite-1)];   // PF1Q1,PF1Q2,PF2Q1,… (DonnerColPF)
+  const rows = tab.split(';');
+  const r = rows[ind-1];
+  if(!r) return null;
+  const p = r.split(',');
+  return {epSurf:+p[0], epBase1:+p[1], epBase2:+p[2], epFond1:+p[3], epFond2:+p[4],
+          qm:+p[5], minTec:p[6]==='1', maxPra:p[7]==='1'};
+}
+
+/* ---- gel ---- */
+const Qng = (hn, traitee) => (traitee?0.14:0.12) * (hn*hn)/(hn+10);
+const Qg  = p => p<=0.25 ? 4 : (p<=1 ? 1/p : 0);
+
+/* ================================================================
+   2. Familles de matériaux (rendu graphique + base carbone)
+   ================================================================ */
+const FAM_MAT = {
+  ES:'bit', BBSG:'bit', BBME:'bit', BBM:'bit', BBTM:'bit', BBDr:'bit',
+  'Enrobés':'bit', EME:'bit', GB2:'bit', GB3:'bit', GE:'bit',
+  GC3:'hyd', SC:'hyd', GLg:'hyd', 'GLg-T2':'hyd', GCV:'hyd',
+  BC5:'bet', BC3:'bet', BC5g:'bet',
+  GNT:'gnt', LitPose:'pose', 'Pavés':'pav', Dalles:'pav'
+};
+const FAM_FILL = {bit:'#2B2D2F', hyd:'#B7BBB2', bet:'#CFD2CB', gnt:'#9C9384', pose:'#D8D5C9', pav:'#8C8377'};
+const famOf = m => FAM_MAT[m] || 'gnt';
+
+/* ================================================================
+   3. État
+   ================================================================ */
+function nouvelleSolution(){
+  return {
+    voie:2, qualite:1, ti:60, ds:20, ca:2, cam:null,
+    famille:2, structIdx:null, pf:1, composition:0,
+    // gel
+    gel:false, station:65, hiver:'HRNE', agglo:0, sol:3, hn:35, cfTraitee:false,
+    // carbone
+    pfExistante:true, epES:1.5, pctReutil:70, densite:1.0, produits:{},
+  };
+}
+const state = {
+  sol:'A',
+  A:nouvelleSolution(),
+  B:Object.assign(nouvelleSolution(), {famille:1, ti:40, structIdx:null}),
+  projet:{nom:"", phase:"AVP", indice:"A", surface:1000, auteur:"", date:new Date().toISOString().slice(0,10)},
+  open:{1:true,2:true,3:true,4:true,5:false,6:true,7:false},
+};
+const S = () => state[state.sol];
+
+/* structures compatibles avec le type de voie + la famille */
+function structuresDispo(sol){
+  const v = VOIES.find(x=>x.id===sol.voie);
+  return D.structures.filter(s => s.v[v.idx]===1 && s.ts===sol.famille);
+}
+const structOf = sol => sol.structIdx==null ? null : D.structures.find(s=>s.i===sol.structIdx && s.ts===sol.famille) || null;
+
+/* ================================================================
+   4. Moteur — calcul complet d'une solution
+   ================================================================ */
+function calcule(sol){
+  const r = {ok:false, msgs:[], sol};
+  const dom = domaineTrafic(sol.voie);
+  r.dom = dom;
+  r.npl = traficCumule(sol.ti, sol.ds, sol.ca);
+
+  const st = structOf(sol);
+  r.st = st;
+  r.camDom = domaineCAM(sol.voie, st);
+  r.cam = sol.cam==null ? r.camDom.p : sol.cam;
+  r.ne  = nbEssieux(r.npl, r.cam);
+
+  if(sol.ti < dom.tmin || sol.ti > dom.tmax)
+    r.msgs.push({t:'err', m:`Trafic PL initial hors domaine pour ce type de voie (${dom.min} à ${dom.max} PL/j).`});
+  else if(sol.ti < dom.min || sol.ti > dom.max)
+    r.msgs.push({t:'warn', m:`Trafic PL initial en limite de domaine (usuel : ${dom.min} à ${dom.max} PL/j).`});
+
+  if(r.cam < r.camDom.min || r.cam > r.camDom.max)
+    r.msgs.push({t:'warn', m:`CAM hors de la plage usuelle (${fr(r.camDom.min,2)} à ${fr(r.camDom.max,2)}).`});
+
+  if(!st){ r.msgs.push({t:'info', m:"Choisissez une structure pour obtenir les épaisseurs."}); return r; }
+
+  if(r.ne > 10000000){ r.msgs.push({t:'err', m:"Le nombre d'essieux dépasse 10 000 000 : hors domaine du catalogue urbain."}); return r; }
+  if(r.ne < st.ne[0]){
+    r.msgs.push({t:'err', m:`NE = ${fr(r.ne)} inférieur au minimum de la structure (${fr(st.ne[0])}). Prenez une structure moins épaisse ou vérifiez le trafic.`});
+    return r;
+  }
+  if(r.ne > st.ne[1]){
+    r.msgs.push({t:'err', m:`NE = ${fr(r.ne)} supérieur au maximum de la structure (${fr(st.ne[1])}). Prenez une structure plus résistante.`});
+    return r;
+  }
+
+  const th = neTheorique(r.ne, st);
+  r.neTh = th.ne;
+  const L = ligne(st, sol.pf, sol.qualite, th.ind);
+  if(!L){ r.msgs.push({t:'err', m:"Aucune épaisseur au catalogue pour cette combinaison."}); return r; }
+  r.L = L;
+
+  if(L.maxPra) r.msgs.push({t:'err', m:"Maximum pratique dépassé : le catalogue ne propose pas d'épaisseur pour ce niveau de trafic."});
+  if(L.minTec) r.msgs.push({t:'warn', m:"Épaisseur ramenée au minimum technologique de mise en œuvre."});
+
+  /* --- constitution des couches --- */
+  const couches = [];
+  const push = (mat,ep,role,ghost) => { if(ep>0) couches.push({mat,ep,role,ghost:!!ghost}); };
+
+  // couche de surface
+  const surfKey = st.s.trim()==='Enrobés' ? (st.tc===2 ? 'Enrobés*' : 'Enrobés') : st.s.trim();
+  const ms = D.matsurf[surfKey];
+  r.surfKey = surfKey; r.compos = null;
+  if(st.s.trim()!=='Aucune'){
+    if(ms && ms.comp){
+      const opts = ms.comp.filter(c => c[0]===L.epSurf);
+      r.compoOpts = opts;
+      const c = opts[Math.min(sol.composition, Math.max(0,opts.length-1))] || opts[0];
+      r.compos = c;
+      if(c) for(let i=1;i<c.length;i++) push(c[i][1], c[i][0], 'Couche de surface');
+      else push('BBSG', L.epSurf, 'Couche de surface');
+    } else if(st.se===1){
+      // epaisseur sans signification (enduit superficiel) : 3 cm pour le dessin
+      push(surfKey, 3, 'Couche de surface', true);
+    } else {
+      push(surfKey, L.epSurf, 'Couche de surface');
+    }
+    if(surfKey==='Pavés' || surfKey==='Dalles') push('LitPose', EP_LIT_POSE, 'Lit de pose');
+  }
+  push(st.b, L.epBase1, 'Couche de base');
+  push(st.b, L.epBase2, 'Couche de base');
+  push(st.f, L.epFond1, 'Couche de fondation');
+  push(st.f, L.epFond2, 'Couche de fondation');
+  // une même couche mise en œuvre en deux passes est numérotée
+  const cptRole = {};
+  couches.forEach(c => cptRole[c.role] = (cptRole[c.role]||0) + 1);
+  const vu = {};
+  couches.forEach(c => { if(cptRole[c.role] > 1){ vu[c.role] = (vu[c.role]||0)+1; c.role += ` ${vu[c.role]}/${cptRole[c.role]}`; } });
+  r.couches = couches;
+  r.total = couches.reduce((a,c)=>a+c.ep,0);
+
+  /* --- vérification au gel --- */
+  if(sol.gel){
+    const sd = SOLS.find(x=>x.id===sol.sol);
+    const acs = ms ? ms.a : 0, bcs = ms ? ms.b : 0;
+    const mb = D.matbf[st.b] || {a:0,b:0}, mf = D.matbf[st.f] || {a:0,b:0};
+    const e12 = (st.s.trim()==='Aucune'?0:(st.se===1?3:L.epSurf)) + ((surfKey==='Pavés'||surfKey==='Dalles')?EP_LIT_POSE:0);
+    const e34 = L.epBase1 + L.epBase2, e56 = L.epFond1 + L.epFond2;
+    const aH = 1 + (acs*e12 + mb.a*e34 + mf.a*e56);
+    const bH = bcs*e12 + mb.b*e34 + mf.b*e56;
+    const q = L.qm + Qng(sol.hn, sol.cfTraitee) + Qg(sd.p);
+    r.gel = {
+      horsGel: sd.p<=0.05,
+      adm: sd.p<=0.05 ? Infinity : 10 + Math.pow(aH*q + bH, 2)/0.6,
+      ref: Math.round((D.stations[sol.station] ? D.stations[sol.station][sol.hiver] : 0) * AGGLO[sol.agglo].c),
+      aH, bH, qm:L.qm, qng:Qng(sol.hn,sol.cfTraitee), qg:Qg(sd.p)
+    };
+    r.gel.ok = r.gel.adm >= r.gel.ref;
+  }
+
+  /* --- bilan carbone --- */
+  r.co2 = bilanCarbone(sol, r);
+  r.ok = !L.maxPra;
+  return r;
+}
+
+/* ---- produits carbone ---- */
+const prod = n => D.carbone.find(p=>p.n===n);
+function produitsPour(mat){ return (D.map[mat] || ['GNT 0/31,5']); }
+function produitChoisi(sol, mat){
+  const l = produitsPour(mat);
+  const c = sol.produits[mat];
+  return (c && l.includes(c)) ? c : l[0];
+}
+
+function bilanCarbone(sol, r){
+  if(!r.couches) return null;
+  const lignes = [];
+  for(const c of r.couches){
+    const pn = produitChoisi(sol, c.mat);
+    const p  = prod(pn) || {h:0,dvr:50};
+    const ep = c.ghost ? sol.epES/100 : c.ep/100;     // enduit superficiel : épaisseur retenue
+    const R  = 50/p.dvr;
+    lignes.push({mat:c.mat, role:c.role, ep:c.ep, epc:ep, produit:pn, dvr:p.dvr, R,
+                 h:p.h, imm:p.h*ep, cinq:p.h*R*ep, ghost:c.ghost});
+  }
+  const structImm  = lignes.reduce((a,l)=>a+l.imm,0);
+  const struct50   = lignes.reduce((a,l)=>a+l.cinq,0);
+
+  const epDeb = r.total/100;
+  const pr = sol.pctReutil/100;
+  const dReu = D.deblais[0], dSto = D.deblais[1];
+  const debReu = dReu.h * epDeb * pr      * sol.densite;
+  const debSto = dSto.h * epDeb * (1-pr)  * sol.densite;
+  const deblais = debReu + debSto;
+
+  const plate = sol.pfExistante ? 0 : (D.pfco2[PF[sol.pf]] || 0);
+
+  return {lignes, structImm, struct50, deblais, debReu, debSto, epDeb, plate,
+          totImm: structImm + deblais + plate,
+          tot50 : struct50  + deblais + plate};
+}
+
+/* ================================================================
+   5. Utilitaires d'affichage
+   ================================================================ */
+const fr = (n,d=0) => (n==null||!isFinite(n)) ? "—" :
+  n.toLocaleString('fr-FR',{minimumFractionDigits:d,maximumFractionDigits:d});
+const esc = s => String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const el = (h) => { const t=document.createElement('template'); t.innerHTML=h.trim(); return t.content.firstElementChild; };
+
+/* ================================================================
+   6. Volet de saisie
+   ================================================================ */
+function renderRail(){
+  const sol = S(), r = calcule(sol), st = r.st;
+  const rail = document.getElementById('rail');
+  rail.innerHTML = '';
+
+  document.querySelectorAll('.solswitch button').forEach(b=>{
+    b.setAttribute('aria-selected', b.dataset.sol===state.sol);
+  });
+  ['A','B'].forEach(k=>{
+    const s = structOf(state[k]);
+    document.getElementById('sw'+k).textContent = s ? s.n : "Non définie";
+  });
+
+  /* — 1 · Voie — */
+  rail.appendChild(step(1, "Voie", VOIES.find(v=>v.id===sol.voie).court, null, `
+    <div class="field">
+      <label for="fVoie">Type de voie</label>
+      <select id="fVoie">${VOIES.map(v=>`<option value="${v.id}" ${v.id===sol.voie?'selected':''}>${v.nom}</option>`).join('')}</select>
+      <div class="hint">Trafic PL usuel : ${r.dom.min} à ${r.dom.max} PL/j/sens</div>
+    </div>
+    <div class="field">
+      <span class="legend">Qualité de mise en œuvre</span>
+      <div class="seg" id="fQual">
+        <button data-v="1" aria-pressed="${sol.qualite===1}">Q1 — courante</button>
+        <button data-v="2" aria-pressed="${sol.qualite===2}">Q2 — difficile</button>
+      </div>
+      <div class="hint">Q2 majore les épaisseurs (chantier contraint, contrôles réduits).</div>
+    </div>`));
+
+  /* — 2 · Trafic — */
+  const msgHtml = r.msgs.filter(m=>m.t!=='info').map(m=>
+    `<div class="r ${m.t==='err'?'err':'alert'}"><span class="k">${esc(m.m)}</span></div>`).join('');
+  rail.appendChild(step(2, "Trafic", fr(r.ne)+" NE",
+    r.msgs.some(m=>m.t==='err')?'bad':(r.msgs.some(m=>m.t==='warn')?'warn':null), `
+    <div class="row2">
+      <div class="field"><label for="fTi">Trafic PL initial <span class="hint" style="display:inline">PL/j/sens</span></label>
+        <input type="number" id="fTi" class="numin" min="0" step="1" value="${sol.ti}"></div>
+      <div class="field"><label for="fDs">Durée de service <span class="hint" style="display:inline">ans</span></label>
+        <input type="number" id="fDs" class="numin" min="1" max="50" step="1" value="${sol.ds}"></div>
+    </div>
+    <div class="field">
+      <span class="legend">Croissance annuelle du trafic</span>
+      <div class="seg" id="fCa">${[0,1,2,3,4,5].map(p=>`<button data-v="${p}" aria-pressed="${sol.ca===p}">${p} %</button>`).join('')}</div>
+    </div>
+    <div class="field">
+      <label for="fCam">Coefficient d'agressivité moyen (CAM)</label>
+      <input type="number" id="fCam" class="numin" min="0.01" max="3" step="0.05" value="${fr2(r.cam)}">
+      <div class="hint">Valeur préconisée ${fr(r.camDom.p,2)} — plage ${fr(r.camDom.min,2)} à ${fr(r.camDom.max,2)}${st?'':' (indicatif, sans structure choisie)'}</div>
+    </div>
+    <div class="readout">
+      <div class="r"><span class="k">Trafic PL cumulé</span><span class="v">${fr(r.npl)}</span></div>
+      <div class="r"><span class="k">Essieux équivalents NE</span><span class="v big">${fr(r.ne)}</span></div>
+      ${r.neTh?`<div class="r"><span class="k">NE de calcul au catalogue</span><span class="v">${fr(r.neTh)}</span></div>`:''}
+      ${msgHtml}
+    </div>
+    <div class="note">NE = 365 × T<sub>i</sub> × [ n + c·n(n−1)/2 ] × CAM, formule du catalogue des structures types de chaussées urbaines.</div>`));
+
+  /* — 3 · Structure — */
+  const dispo = structuresDispo(sol);
+  rail.appendChild(step(3, "Structure", st? st.n : "Non définie", st?null:'warn', `
+    <div class="field">
+      <span class="legend">Famille</span>
+      <div class="seg" id="fFam" style="flex-wrap:wrap">
+        ${FAMILLES.map(f=>{
+          const n = D.structures.filter(s=>s.v[VOIES.find(v=>v.id===sol.voie).idx]===1 && s.ts===f.id).length;
+          return `<button data-v="${f.id}" aria-pressed="${sol.famille===f.id}" ${n?'':'disabled style="opacity:.35;cursor:not-allowed"'}
+                   style="flex:0 0 33.33%;border-bottom:1px solid var(--rule2)">${f.nom.split(' ')[0]}</button>`;
+        }).join('')}
+      </div>
+    </div>
+    <div class="field">
+      <span class="legend">Structure type — ${dispo.length} au catalogue</span>
+      ${dispo.length? `<div class="opts" id="fStruct">${dispo.map(s=>`
+        <button data-v="${s.i}" aria-pressed="${st&&st.i===s.i}">
+          <span>${esc(s.n)}</span>
+          <span class="meta">${abrege(s.ne[0])}–${abrege(s.ne[1])} NE</span>
+        </button>`).join('')}</div>`
+        : `<div class="note">Aucune structure de cette famille n'est admise pour ce type de voie.</div>`}
+    </div>
+    ${st?`<div class="readout">
+      <div class="r"><span class="k">Surface</span><span class="v">${esc(st.s)}</span></div>
+      <div class="r"><span class="k">Base</span><span class="v">${esc(st.b)}</span></div>
+      <div class="r"><span class="k">Fondation</span><span class="v">${esc(st.f)}</span></div>
+      <div class="r"><span class="k">Risque de calcul</span><span class="v">${st.r} %</span></div>
+    </div>`:''}`));
+
+  /* — 4 · Plate-forme — */
+  rail.appendChild(step(4, "Plate-forme", PF[sol.pf], null, `
+    <div class="field">
+      <span class="legend">Classe de plate-forme support</span>
+      <div class="seg" id="fPf">${PF.map((p,i)=>`<button data-v="${i}" aria-pressed="${sol.pf===i}">${p}</button>`).join('')}</div>
+      <div class="hint">PF1 ≥ 20 MPa · PF2 ≥ 50 MPa · PF2+ ≥ 80 MPa · PF3 ≥ 120 MPa</div>
+    </div>
+    <div class="field">
+      <span class="legend">La plate-forme existe déjà ?</span>
+      <div class="seg" id="fPfEx">
+        <button data-v="1" aria-pressed="${sol.pfExistante}">Oui</button>
+        <button data-v="0" aria-pressed="${!sol.pfExistante}">Non, à créer</button>
+      </div>
+      <div class="hint">Si elle est à créer, ${D.pfco2[PF[sol.pf]]} kgCO₂e/m² sont ajoutés au bilan.</div>
+    </div>`));
+
+  /* — 5 · Couche de surface — */
+  if(r.compoOpts && r.compoOpts.length>1){
+    rail.appendChild(step(5, "Couche de surface", r.compos ? r.compos.slice(1).map(c=>c[1]).join(' + ') : '—', null, `
+      <div class="field">
+        <span class="legend">Composition — ${r.L.epSurf} cm au total</span>
+        <div class="opts" id="fCompo">${r.compoOpts.map((c,i)=>`
+          <button data-v="${i}" aria-pressed="${r.compos===c}">
+            <span>${c.slice(1).map(x=>`${x[1]} ${x[0]} cm`).join(' sur ')}</span>
+            <span class="meta">${c.slice(1).map(x=>esc((D.matsurf[x[1]]||{}).nom||'')).join(' / ')}</span>
+          </button>`).join('')}</div>
+      </div>`));
+  }
+
+  /* — 6 · Bilan carbone — */
+  const co2 = r.co2;
+  rail.appendChild(step(6, "Bilan carbone", co2? fr(co2.tot50)+" kg/m²" : "—", null, `
+    ${co2?`
+    <div class="field">
+      <span class="legend">Produits retenus par couche</span>
+      <table class="mini"><thead><tr><th>Couche</th><th>Produit</th><th class="n">kgCO₂e/m²</th></tr></thead><tbody>
+        ${co2.lignes.map(l=>`<tr>
+          <td><span class="swatch" style="background:${FAM_FILL[famOf(l.mat)]}"></span>${esc(l.mat)} <span class="num" style="color:var(--ink3)">${l.ghost?fr(sol.epES,1):l.ep} cm</span></td>
+          <td><select data-mat="${esc(l.mat)}" class="pSel">${produitsPour(l.mat).map(p=>`<option ${p===l.produit?'selected':''}>${esc(p)}</option>`).join('')}</select></td>
+          <td class="n">${fr(l.cinq,1)}</td></tr>`).join('')}
+      </tbody></table>
+    </div>
+    <div class="row2">
+      <div class="field"><label for="fReu">Déblais réutilisés <span class="hint" style="display:inline">%</span></label>
+        <input type="number" id="fReu" class="numin" min="0" max="100" step="5" value="${sol.pctReutil}"></div>
+      <div class="field"><label for="fDens">Masse volumique déblais <span class="hint" style="display:inline">t/m³</span></label>
+        <input type="number" id="fDens" class="numin" min="0.5" max="2.5" step="0.1" value="${sol.densite}"></div>
+    </div>
+    ${r.couches.some(c=>c.ghost)?`<div class="field"><label for="fEps">Épaisseur retenue pour l'enduit superficiel <span class="hint" style="display:inline">cm</span></label>
+      <input type="number" id="fEps" class="numin" min="0.5" max="5" step="0.5" value="${sol.epES}"></div>`:''}
+    <div class="readout">
+      <div class="r"><span class="k">Structure — pose initiale</span><span class="v">${fr(co2.structImm,1)}</span></div>
+      <div class="r"><span class="k">Structure — 50 ans avec renouvellements</span><span class="v">${fr(co2.struct50,1)}</span></div>
+      <div class="r"><span class="k">Déblais (${fr(co2.epDeb*100)} cm)</span><span class="v">${fr(co2.deblais,1)}</span></div>
+      <div class="r"><span class="k">Plate-forme</span><span class="v">${fr(co2.plate,1)}</span></div>
+      <div class="r"><span class="k"><b>Total 50 ans</b></span><span class="v big">${fr(co2.tot50,1)} kg/m²</span></div>
+    </div>
+    <div class="note">Facteurs issus du classeur d'impact environnemental fourni (fiches SEVE TP et INIES). Le renouvellement vaut 50 / durée de vie de référence : un enrobé à 20 ans est compté 2,5 fois sur la période.
+    <br><br>La masse volumique des déblais convertit l'épaisseur en tonnage. <b>1,0 t/m³</b> reproduit exactement le calcul du classeur ; 1,8 à 2,1 t/m³ correspond à des déblais réels.</div>
+    `:'<div class="note">Le bilan apparaît dès que les épaisseurs sont déterminées.</div>'}`));
+
+  /* — 7 · Gel — */
+  rail.appendChild(step(7, "Vérification au gel",
+    sol.gel ? (r.gel ? (r.gel.horsGel?"Hors gel":(r.gel.ok?"Satisfaisante":"Insuffisante")) : "—") : "Désactivée",
+    sol.gel && r.gel && !r.gel.ok && !r.gel.horsGel ? 'bad' : null, `
+    <div class="field">
+      <div class="seg" id="fGel">
+        <button data-v="0" aria-pressed="${!sol.gel}">Ne pas vérifier</button>
+        <button data-v="1" aria-pressed="${sol.gel}">Vérifier</button>
+      </div>
+    </div>
+    ${sol.gel?`
+    <div class="field"><label for="fStation">Station météo de référence</label>
+      <select id="fStation">${D.stations.map((s,i)=>`<option value="${i}" ${sol.station===i?'selected':''}>${esc(s.nom)} (${s.dpt}) — ${s.alt} m</option>`).join('')}</select></div>
+    <div class="field"><span class="legend">Hiver de référence</span>
+      <div class="seg" id="fHiver">${HIVERS.map(h=>`<button data-v="${h.k}" aria-pressed="${sol.hiver===h.k}">${h.k}</button>`).join('')}</div>
+      <div class="hint">${HIVERS.map(h=>`${h.k} : ${h.nom}`).join(' · ')}</div></div>
+    <div class="field"><label for="fAgglo">Taille de l'agglomération</label>
+      <select id="fAgglo">${AGGLO.map((a,i)=>`<option value="${i}" ${sol.agglo===i?'selected':''}>${a.nom} — coefficient ${fr(a.c,1)}</option>`).join('')}</select></div>
+    <div class="field"><span class="legend">Sol support</span>
+      <div class="seg" id="fSol">${SOLS.map(s=>`<button data-v="${s.id}" aria-pressed="${sol.sol===s.id}">${s.nom}</button>`).join('')}</div></div>
+    <div class="row2">
+      <div class="field"><label for="fHn">Couche de forme non gélive <span class="hint" style="display:inline">cm</span></label>
+        <input type="number" id="fHn" class="numin" min="0" max="120" step="5" value="${sol.hn}"></div>
+      <div class="field"><span class="legend">Traitement</span>
+        <div class="seg" id="fCf">
+          <button data-v="0" aria-pressed="${!sol.cfTraitee}">Non traitée</button>
+          <button data-v="1" aria-pressed="${sol.cfTraitee}">Traitée</button></div></div>
+    </div>
+    ${r.gel?`<div class="readout">
+      <div class="r"><span class="k">Indice de gel atmosphérique de référence</span><span class="v">${fr(r.gel.ref)} °C·j</span></div>
+      <div class="r"><span class="k">Indice de gel admissible de la chaussée</span><span class="v big">${r.gel.horsGel?'Hors gel':fr(r.gel.adm)+' °C·j'}</span></div>
+      <div class="r ${r.gel.horsGel||r.gel.ok?'':'err'}"><span class="k">Résultat</span><span class="v">${r.gel.horsGel?'Sol non gélif':(r.gel.ok?'Vérification satisfaite':'Renforcer la couche de forme')}</span></div>
+    </div>`:'<div class="note">Déterminez d\'abord les épaisseurs.</div>'}
+    `:'<div class="note">La vérification au gel/dégel compare l\'indice de gel admissible de la structure à l\'indice atmosphérique de référence corrigé de l\'effet d\'îlot de chaleur urbain.</div>'}`));
+
+  bindRail();
+}
+
+const fr2 = n => String(Math.round(n*100)/100);
+const abrege = n => n>=1e6 ? (n/1e6).toFixed(n%1e6?1:0).replace('.',',')+" M" : (n>=1000 ? (n/1000)+" k" : n);
+
+function step(n, titre, chip, chipCls, body){
+  return el(`<details class="step" data-step="${n}" ${state.open[n]?'open':''}>
+    <summary><span class="idx num">${n}</span><span class="ttl">${titre}</span><span class="chip ${chipCls||''}">${esc(chip)}</span></summary>
+    <div class="body">${body}</div></details>`);
+}
+
+/* ---- liaisons ---- */
+function bindRail(){
+  const sol = S();
+  const rail = document.getElementById('rail');
+
+  rail.querySelectorAll('details.step').forEach(d=>{
+    d.addEventListener('toggle', ()=>{ state.open[d.dataset.step] = d.open; });
+  });
+
+  const seg = (id, fn) => {
+    const n = document.getElementById(id); if(!n) return;
+    n.addEventListener('click', e=>{
+      const b = e.target.closest('button'); if(!b || b.disabled) return;
+      fn(b.dataset.v); renderAll();
+    });
+  };
+  const num = (id, fn) => {
+    const n = document.getElementById(id); if(!n) return;
+    n.addEventListener('input', ()=>{ fn(parseFloat(n.value)); renderSheet(); refreshChips(); });
+    n.addEventListener('change', ()=>{ fn(parseFloat(n.value)); renderAll(); });
+  };
+
+  const fVoie = document.getElementById('fVoie');
+  if(fVoie) fVoie.addEventListener('change', ()=>{
+    sol.voie = +fVoie.value;
+    const d = structuresDispo(sol);
+    if(!d.some(s=>s.i===sol.structIdx)){
+      const fam = FAMILLES.find(f=>D.structures.some(s=>s.v[VOIES.find(v=>v.id===sol.voie).idx]===1 && s.ts===f.id));
+      if(fam && !D.structures.some(s=>s.v[VOIES.find(v=>v.id===sol.voie).idx]===1 && s.ts===sol.famille)) sol.famille = fam.id;
+      sol.structIdx = null;
+    }
+    sol.cam = null; renderAll();
+  });
+
+  seg('fQual', v=>{ sol.qualite = +v; });
+  seg('fCa',   v=>{ sol.ca = +v; });
+  seg('fFam',  v=>{ sol.famille = +v; sol.structIdx = null; sol.cam = null; });
+  seg('fStruct', v=>{ sol.structIdx = +v; sol.composition = 0; sol.cam = null; });
+  seg('fPf',   v=>{ sol.pf = +v; });
+  seg('fPfEx', v=>{ sol.pfExistante = v==='1'; });
+  seg('fCompo',v=>{ sol.composition = +v; });
+  seg('fGel',  v=>{ sol.gel = v==='1'; state.open[7] = true; });
+  seg('fHiver',v=>{ sol.hiver = v; });
+  seg('fSol',  v=>{ sol.sol = +v; });
+  seg('fCf',   v=>{ sol.cfTraitee = v==='1'; });
+
+  num('fTi',  v=>{ sol.ti = isNaN(v)?0:v; });
+  num('fDs',  v=>{ sol.ds = isNaN(v)?1:Math.max(1,v); });
+  num('fCam', v=>{ sol.cam = isNaN(v)?null:v; });
+  num('fReu', v=>{ sol.pctReutil = isNaN(v)?0:Math.min(100,Math.max(0,v)); });
+  num('fDens',v=>{ sol.densite = isNaN(v)?1:v; });
+  num('fEps', v=>{ sol.epES = isNaN(v)?1.5:v; });
+  num('fHn',  v=>{ sol.hn = isNaN(v)?0:v; });
+
+  const st2 = document.getElementById('fStation');
+  if(st2) st2.addEventListener('change', ()=>{ sol.station = +st2.value; renderAll(); });
+  const ag = document.getElementById('fAgglo');
+  if(ag) ag.addEventListener('change', ()=>{ sol.agglo = +ag.value; renderAll(); });
+
+  rail.querySelectorAll('select.pSel').forEach(s=>{
+    s.addEventListener('change', ()=>{ sol.produits[s.dataset.mat] = s.value; renderAll(); });
+  });
+}
+
+function refreshChips(){
+  const sol = S(), r = calcule(sol);
+  const set = (n, txt) => { const e = document.querySelector(`details[data-step="${n}"] .chip`); if(e) e.textContent = txt; };
+  set(2, fr(r.ne)+" NE");
+  if(r.co2) set(6, fr(r.co2.tot50)+" kg/m²");
+}
+
+/* ================================================================
+   7. Feuille de résultats
+   ================================================================ */
+function renderSheet(){
+  const rA = calcule(state.A), rB = calcule(state.B);
+  const sheet = document.getElementById('sheet');
+  sheet.innerHTML = `
+    ${headSheet(rA, rB)}
+    <section class="section">
+      <h3>Coupes types</h3>
+      <div class="sub">Épaisseurs en centimètres, lues au catalogue pour le NE de calcul et la classe de plate-forme.</div>
+      ${coupeSVG(rA, rB)}
+    </section>
+    ${sectionCarbone(rA, rB)}
+    ${sectionDetail(rA, rB)}
+    ${cartouche(rA, rB)}`;
+  bindSheet();
+}
+
+function headSheet(rA, rB){
+  const c = (r, k, col) => {
+    const st = r.st;
+    return `<div class="col">
+      <div class="tag"><span class="dot" style="background:${col}"></span><span class="eyebrow">Solution ${k}</span></div>
+      <h2 class="${st?'':'empty'}">${st? esc(st.n) : "À définir"}</h2>
+      <div class="meta">${st? `${esc(VOIES.find(v=>v.id===r.sol.voie).court)} · Q${r.sol.qualite} · ${PF[r.sol.pf]} · NE ${fr(r.ne)}${r.total?` · ${r.total} cm`:''}` : "Choisissez une famille puis une structure"}</div>
+    </div>`;
+  };
+  return `<div class="sheethead">${c(rA,'A','var(--a)')}${c(rB,'B','var(--b)')}</div>`;
+}
+
+/* ---------- dessin des coupes ---------- */
+function coupeSVG(rA, rB){
+  const maxTot = Math.max(rA.total||0, rB.total||0, 20);
+  const H = 470, top = 34, scale = Math.min(9.5, (H-top-70)/maxTot);
+  const W = 840, cxA = 225, cxB = 495, colW = 110, rulerX = 415;
+  const bottom = top + maxTot*scale;
+
+  const defs = `
+  <defs>
+    <pattern id="p-bit" width="6" height="6" patternUnits="userSpaceOnUse">
+      <rect width="6" height="6" fill="#2B2D2F"/><circle cx="1.5" cy="1.5" r=".7" fill="#4a4d50"/><circle cx="4.5" cy="4" r=".6" fill="#43464a"/>
+    </pattern>
+    <pattern id="p-gnt" width="9" height="9" patternUnits="userSpaceOnUse">
+      <rect width="9" height="9" fill="#9C9384"/><circle cx="2" cy="2.5" r="1.5" fill="#87806f"/><circle cx="6.5" cy="6" r="1.8" fill="#aaa192"/><circle cx="7" cy="1.5" r="1" fill="#7d7566"/>
+    </pattern>
+    <pattern id="p-hyd" width="7" height="7" patternUnits="userSpaceOnUse">
+      <rect width="7" height="7" fill="#B7BBB2"/><path d="M0 7 L7 0" stroke="#9aa094" stroke-width=".9"/><path d="M0 0 L7 7" stroke="#9aa094" stroke-width=".9"/>
+    </pattern>
+    <pattern id="p-bet" width="7" height="7" patternUnits="userSpaceOnUse">
+      <rect width="7" height="7" fill="#CFD2CB"/><path d="M0 7 L7 0" stroke="#a9ada4" stroke-width=".9"/>
+    </pattern>
+    <pattern id="p-pose" width="5" height="5" patternUnits="userSpaceOnUse">
+      <rect width="5" height="5" fill="#D8D5C9"/><circle cx="1.5" cy="1.5" r=".55" fill="#b5b1a2"/><circle cx="3.8" cy="3.6" r=".5" fill="#b5b1a2"/>
+    </pattern>
+    <pattern id="p-pav" width="14" height="9" patternUnits="userSpaceOnUse">
+      <rect width="14" height="9" fill="#8C8377"/><path d="M0 4.5H14M7 0V4.5M0 9h14M3.5 4.5V9M10.5 4.5V9" stroke="#6e6559" stroke-width="1"/>
+    </pattern>
+    <pattern id="p-sol" width="8" height="8" patternUnits="userSpaceOnUse">
+      <rect width="8" height="8" fill="#E6E8E3"/><path d="M-1 7 L7 -1 M1 9 L9 1" stroke="#B4BAB3" stroke-width="1"/>
+    </pattern>
+  </defs>`;
+
+  // règle graduée partagée — l'instrument de comparaison
+  let ruler = `<line x1="${rulerX}" y1="${top}" x2="${rulerX}" y2="${bottom}" stroke="#14171A" stroke-width="1"/>`;
+  for(let cm=0; cm<=maxTot; cm++){
+    const y = top + cm*scale;
+    if(cm%10===0){
+      ruler += `<line x1="${rulerX-7}" y1="${y}" x2="${rulerX+7}" y2="${y}" stroke="#14171A" stroke-width="1"/>
+        <text x="${rulerX}" y="${y-5}" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="10" fill="#14171A">${cm}</text>`;
+      // lignes de rappel limitées à la hauteur réellement construite
+      if(cm <= (rA.total||0)) ruler += `<line x1="${cxA}" y1="${y}" x2="${cxA+colW}" y2="${y}" stroke="#14171A" stroke-opacity=".13" stroke-width="1"/>`;
+      if(cm <= (rB.total||0)) ruler += `<line x1="${cxB}" y1="${y}" x2="${cxB+colW}" y2="${y}" stroke="#14171A" stroke-opacity=".13" stroke-width="1"/>`;
+    } else if(cm%5===0){
+      ruler += `<line x1="${rulerX-4}" y1="${y}" x2="${rulerX+4}" y2="${y}" stroke="#14171A" stroke-opacity=".55" stroke-width=".8"/>`;
+    } else {
+      ruler += `<line x1="${rulerX-2}" y1="${y}" x2="${rulerX+2}" y2="${y}" stroke="#14171A" stroke-opacity=".3" stroke-width=".6"/>`;
+    }
+  }
+  ruler += `<text x="${rulerX}" y="${bottom+16}" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="9" letter-spacing="1.4" fill="#8D948B">CM</text>`;
+
+  // écart de terrassement entre les deux solutions
+  if(rA.total && rB.total && rA.total !== rB.total){
+    const y1 = top + Math.min(rA.total, rB.total)*scale;
+    const y2 = top + Math.max(rA.total, rB.total)*scale;
+    const bx = rulerX - 17;
+    ruler += `<path d="M ${bx+4} ${y1} H ${bx} V ${y2} H ${bx+4}" fill="none" stroke="#E0A80B" stroke-width="1.4"/>
+      <text x="${bx-5}" y="${(y1+y2)/2-2}" text-anchor="end" font-family="IBM Plex Mono, monospace" font-size="10" fill="#8a6300">Δ ${Math.abs(rA.total-rB.total)} cm</text>
+      <text x="${bx-5}" y="${(y1+y2)/2+10}" text-anchor="end" font-size="9.5" fill="#8D948B">de terrassement</text>`;
+  }
+
+  const colonne = (r, x, side, col) => {
+    if(!r.couches || !r.couches.length){
+      const l1 = r.L && r.L.maxPra ? "maximum" : (r.st ? "hors" : "structure");
+      const l2 = r.L && r.L.maxPra ? "pratique dépassé" : (r.st ? "domaine de la structure" : "non définie");
+      const c2 = r.L && r.L.maxPra ? "#A8322A" : "#8D948B";
+      return `<rect x="${x}" y="${top}" width="${colW}" height="${Math.max(60,maxTot*scale)}" fill="#fff" stroke="#C3C8C0" stroke-dasharray="4 3"/>
+        <text x="${x+colW/2}" y="${top+40}" text-anchor="middle" font-size="11" fill="${c2}">${l1}</text>
+        <text x="${x+colW/2}" y="${top+55}" text-anchor="middle" font-size="11" fill="${c2}">${l2}</text>`;
+    }
+    let y = top, g = '', labels = [];
+    for(const c of r.couches){
+      const h = c.ep*scale;
+      g += `<rect x="${x}" y="${y}" width="${colW}" height="${h}" fill="url(#p-${famOf(c.mat)})" stroke="#14171A" stroke-width=".9"/>`;
+      labels.push({y: y + h/2, mat:c.mat, ep:c.ep, ghost:c.ghost, role:c.role, top:y, h});
+      y += h;
+    }
+    // sol support
+    g += `<rect x="${x}" y="${y}" width="${colW}" height="${Math.min(34, bottom+34-y)}" fill="url(#p-sol)" stroke="#14171A" stroke-width=".9"/>`;
+    g += `<text x="${x+colW/2}" y="${y+20}" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="10" fill="#5E655D">${PF[r.sol.pf]}</text>`;
+    g += `<rect x="${x}" y="${top}" width="${colW}" height="${y-top}" fill="none" stroke="#14171A" stroke-width="1.4"/>`;
+    // rail de couleur
+    g += `<rect x="${side==='L'?x-6:x+colW+2}" y="${top}" width="4" height="${y-top}" fill="${col}"/>`;
+
+    // étiquettes sans chevauchement
+    const MIN = 15;
+    for(let i=1;i<labels.length;i++) if(labels[i].y - labels[i-1].y < MIN) labels[i].y = labels[i-1].y + MIN;
+    for(let i=labels.length-1;i>0;i--) if(labels[i].y > bottom+26) labels[i].y = Math.min(labels[i].y, bottom+26);
+    let t = '';
+    for(const L of labels){
+      const anchor = side==='L' ? 'end' : 'start';
+      const tx = side==='L' ? x-16 : x+colW+16;
+      const lx = side==='L' ? x-8  : x+colW+8;
+      t += `<path d="M ${side==='L'?x:x+colW} ${L.top+L.h/2} H ${lx}" stroke="#8D948B" stroke-width=".7"/>`;
+      t += `<circle cx="${side==='L'?x:x+colW}" cy="${L.top+L.h/2}" r="1.6" fill="#14171A"/>`;
+      t += `<text x="${tx}" y="${L.y+3.5}" text-anchor="${anchor}" font-size="11.5" fill="#14171A">
+              <tspan font-weight="600">${esc(L.mat)}</tspan>
+              <tspan font-family="IBM Plex Mono, monospace" fill="#5E655D"> ${L.ghost?'~':''}${L.ep} cm</tspan></text>`;
+    }
+    // total
+    t += `<text x="${side==='L'?x+colW:x}" y="${top-13}" text-anchor="${side==='L'?'end':'start'}"
+            font-family="IBM Plex Mono, monospace" font-size="11" font-weight="600" fill="${col}">Σ ${r.total} cm</text>`;
+    return g + t;
+  };
+
+  const flags = (r, x, side) => {
+    if(!r.L) return '';
+    const items = [];
+    if(r.L.minTec) items.push({t:"minimum technologique", c:"#8a6300"});
+    if(r.L.maxPra) items.push({t:"maximum pratique dépassé", c:"#A8322A"});
+    return items.map((it,i)=>`<text x="${side==='L'?x+colW:x}" y="${bottom+40+i*14}" text-anchor="${side==='L'?'end':'start'}"
+      font-size="10.5" fill="${it.c}">▲ ${it.t}</text>`).join('');
+  };
+
+  return `<svg class="coupe" viewBox="0 0 ${W} ${H}" role="img" aria-label="Coupes comparées des solutions A et B">
+    ${defs}${ruler}
+    ${colonne(rA, cxA, 'L', 'var(--a)')}
+    ${colonne(rB, cxB, 'R', 'var(--b)')}
+    ${flags(rA, cxA, 'L')}${flags(rB, cxB, 'R')}
+  </svg>`;
+}
+
+/* ---------- comparaison carbone ---------- */
+function sectionCarbone(rA, rB){
+  const a = rA.co2, b = rB.co2;
+  if(!a && !b) return `<section class="section"><h3>Bilan carbone à 50 ans</h3>
+    <div class="empty-state"><div class="big">Rien à comparer pour l'instant</div>
+    Définissez au moins une solution complète pour voir le bilan.</div></section>`;
+
+  const max = Math.max(a?a.tot50:0, b?b.tot50:0) || 1;
+  const surface = state.projet.surface || 0;
+
+  const bar = (r, k, col) => {
+    const c = r.co2;
+    if(!c) return `<div class="barrow"><div class="who" style="color:${col}">${k}</div>
+      <div class="bartrack"></div><div class="barval" style="color:var(--ink3)">—</div></div>`;
+    let x = 0, segs = '';
+    for(const l of c.lignes){
+      const w = l.cinq/max*100;
+      segs += `<div class="barseg" style="left:${x}%;width:${w}%;background:${FAM_FILL[famOf(l.mat)]}"
+                title="${esc(l.mat)} — ${fr(l.cinq,1)} kgCO₂e/m²"></div>`;
+      x += w;
+    }
+    if(c.deblais>0){ const w=c.deblais/max*100;
+      segs += `<div class="barseg" style="left:${x}%;width:${w}%;background:#E0A80B" title="Déblais — ${fr(c.deblais,1)}"></div>`; x+=w; }
+    if(c.plate>0){ const w=c.plate/max*100;
+      segs += `<div class="barseg" style="left:${x}%;width:${w}%;background:#5E655D" title="Plate-forme — ${fr(c.plate,1)}"></div>`; }
+    return `<div class="barrow">
+      <div class="who" style="color:${col}">${k}</div>
+      <div class="bartrack">${segs}</div>
+      <div class="barval">${fr(c.tot50,1)}<span class="u">kgCO₂e/m²</span></div>
+    </div>`;
+  };
+
+  let verdict = '';
+  if(a && b){
+    const d = b.tot50 - a.tot50, pct = a.tot50 ? d/a.tot50*100 : 0;
+    const gagnante = d<0 ? 'B' : (d>0 ? 'A' : null);
+    const eco = Math.abs(d)*surface/1000;
+    verdict = `<div class="verdict">
+      <div class="cell"><div class="k">Écart B − A</div><div class="v">${d>0?'+':''}${fr(d,1)} <small>kgCO₂e/m²</small></div></div>
+      <div class="cell"><div class="k">Variation</div><div class="v">${pct>0?'+':''}${fr(pct,1)} <small>%</small></div></div>
+      ${gagnante?`<div class="cell hl"><div class="k">Meilleur bilan</div><div class="v">Solution ${gagnante}</div></div>`:''}
+      <div class="cell"><div class="k">Sur ${fr(surface)} m² de projet</div><div class="v">${fr(eco,1)} <small>t CO₂e évitées</small></div></div>
+    </div>`;
+  } else {
+    const r = a?rA:rB, c = a||b;
+    verdict = `<div class="verdict">
+      <div class="cell"><div class="k">Total 50 ans</div><div class="v">${fr(c.tot50,1)} <small>kgCO₂e/m²</small></div></div>
+      <div class="cell"><div class="k">Sur ${fr(surface)} m² de projet</div><div class="v">${fr(c.tot50*surface/1000,1)} <small>t CO₂e</small></div></div>
+      <div class="cell"><div class="k">Comparaison</div><div class="v" style="font-size:14px;font-weight:500">Définissez la seconde solution</div></div>
+    </div>`;
+  }
+
+  const fams = [['bit','Enrobés et matériaux bitumineux'],['hyd','Graves traitées aux liants hydrauliques'],
+                ['bet','Bétons de ciment'],['gnt','Graves non traitées'],['pose','Lit de pose'],['pav','Pavés et dalles']];
+  const used = new Set();
+  [a,b].forEach(c=>{ if(c) c.lignes.forEach(l=>used.add(famOf(l.mat))); });
+
+  return `<section class="section">
+    <h3>Bilan carbone à 50 ans</h3>
+    <div class="sub">Émissions de la structure sur 50 ans, renouvellements des matériaux compris, déblais et création de plate-forme inclus.</div>
+    <div class="bars">${bar(rA,'A','var(--a)')}${bar(rB,'B','var(--b)')}</div>
+    ${verdict}
+    <div style="margin-top:14px;display:flex;flex-wrap:wrap;gap:14px;font-size:11px;color:var(--ink2)">
+      ${fams.filter(f=>used.has(f[0])).map(f=>`<span><span class="swatch" style="background:${FAM_FILL[f[0]]}"></span>${f[1]}</span>`).join('')}
+      <span><span class="swatch" style="background:#E0A80B"></span>Déblais</span>
+      <span><span class="swatch" style="background:#5E655D"></span>Plate-forme</span>
+    </div>
+  </section>`;
+}
+
+/* ---------- tableau détaillé ---------- */
+function sectionDetail(rA, rB){
+  const tbl = (r, k) => {
+    if(!r.co2) return '';
+    const c = r.co2;
+    return `<div style="flex:1;min-width:300px">
+      <div class="eyebrow" style="margin-bottom:8px">Solution ${k} — ${r.st?esc(r.st.n):''}</div>
+      <table class="det">
+        <thead><tr><th>Couche</th><th class="n">cm</th><th class="n">DVR</th><th class="n">Renouv.</th><th class="n">kgCO₂e/m²</th></tr></thead>
+        <tbody>
+          ${c.lignes.map(l=>`<tr>
+            <td><span class="swatch" style="background:${FAM_FILL[famOf(l.mat)]}"></span>${esc(l.produit)}
+              <span style="color:var(--ink3);font-size:10.5px"> · ${esc(l.role.replace('Couche de ',''))}</span></td>
+            <td class="n">${l.ghost?fr(r.sol.epES,1):l.ep}</td><td class="n">${l.dvr}</td>
+            <td class="n">×${fr(l.R,1)}</td><td class="n">${fr(l.cinq,1)}</td></tr>`).join('')}
+          <tr class="sub"><td>Déblais — ${fr(c.epDeb*100)} cm, ${fr(r.sol.pctReutil)} % réutilisés</td>
+            <td class="n">—</td><td class="n">50</td><td class="n">×1,0</td><td class="n">${fr(c.deblais,1)}</td></tr>
+          ${c.plate>0?`<tr class="sub"><td>Création de plate-forme ${PF[r.sol.pf]}</td><td class="n">—</td><td class="n">—</td><td class="n">—</td><td class="n">${fr(c.plate,1)}</td></tr>`:''}
+          <tr class="tot"><td>Total 50 ans</td><td class="n"></td><td class="n"></td><td class="n"></td><td class="n">${fr(c.tot50,1)}</td></tr>
+          <tr class="sub"><td>dont pose initiale</td><td class="n"></td><td class="n"></td><td class="n"></td><td class="n">${fr(c.totImm,1)}</td></tr>
+        </tbody></table></div>`;
+  };
+  const a = tbl(rA,'A'), b = tbl(rB,'B');
+  if(!a && !b) return '';
+  const gel = (r,k) => r.gel ? `<div style="flex:1;min-width:260px">
+      <div class="eyebrow" style="margin-bottom:8px">Gel — solution ${k}</div>
+      <table class="det"><tbody>
+        <tr><td>Indice de gel de référence corrigé</td><td class="n">${fr(r.gel.ref)} °C·j</td></tr>
+        <tr><td>Q<sub>m</sub> structure</td><td class="n">${fr(r.gel.qm,2)}</td></tr>
+        <tr><td>Q<sub>ng</sub> couche de forme</td><td class="n">${fr(r.gel.qng,2)}</td></tr>
+        <tr><td>Q<sub>g</sub> sol support</td><td class="n">${fr(r.gel.qg,2)}</td></tr>
+        <tr class="tot"><td>Indice de gel admissible</td><td class="n">${r.gel.horsGel?'Hors gel':fr(r.gel.adm)+' °C·j'}</td></tr>
+        <tr class="sub"><td>Vérification</td><td class="n" style="color:${r.gel.horsGel||r.gel.ok?'var(--ok)':'var(--bad)'}">${r.gel.horsGel?'Sol non gélif':(r.gel.ok?'Satisfaite':'Non satisfaite')}</td></tr>
+      </tbody></table></div>` : '';
+  const gels = gel(rA,'A')+gel(rB,'B');
+  return `<section class="section">
+    <h3>Détail du calcul</h3>
+    <div class="sub">Facteurs d'émission par unité fonctionnelle, durée de vie de référence et nombre de renouvellements sur la période.</div>
+    <div style="display:flex;gap:32px;flex-wrap:wrap">${a}${b}</div>
+    ${gels?`<div style="display:flex;gap:32px;flex-wrap:wrap;margin-top:24px">${gels}</div>`:''}
+  </section>`;
+}
+
+/* ---------- cartouche ---------- */
+function cartouche(rA, rB){
+  const p = state.projet;
+  return `<div class="cartouche">
+    <div class="c" style="flex:2 1 240px"><div class="k">Opération</div><div class="v"><input id="cNom" value="${esc(p.nom)}" placeholder="Nom de l'opération"></div></div>
+    <div class="c"><div class="k">Phase</div><div class="v"><input id="cPhase" value="${esc(p.phase)}"></div></div>
+    <div class="c"><div class="k">Surface de chaussée</div><div class="v" style="white-space:nowrap"><input id="cSurf" class="num" value="${p.surface}" style="width:62px;display:inline-block"> m²</div></div>
+    <div class="c"><div class="k">Établi par</div><div class="v"><input id="cAuteur" value="${esc(p.auteur)}" placeholder="Nom"></div></div>
+    <div class="c"><div class="k">Date</div><div class="v"><input id="cDate" type="date" value="${p.date}"></div></div>
+    <div class="c"><div class="k">Indice</div><div class="v"><input id="cInd" value="${esc(p.indice)}"></div></div>
+    <div class="c" style="flex:2 1 220px;background:var(--sheet)"><div class="k">Méthode</div>
+      <div class="v" style="font-size:11px;line-height:1.35">Catalogue des structures types de chaussées urbaines — moteur Struct-Urb (CERTU / Cerema, GPL). Bilan carbone : classeur d'impact environnemental du projet.</div></div>
+  </div>`;
+}
+
+function bindSheet(){
+  const p = state.projet;
+  const on = (id, fn) => { const n = document.getElementById(id); if(n) n.addEventListener('input', ()=>fn(n.value)); };
+  on('cNom', v=>p.nom=v); on('cPhase', v=>p.phase=v); on('cAuteur', v=>p.auteur=v);
+  on('cDate', v=>p.date=v); on('cInd', v=>p.indice=v);
+  const s = document.getElementById('cSurf');
+  if(s) s.addEventListener('change', ()=>{ p.surface = parseFloat(s.value.replace(/\s/g,'').replace(',','.'))||0; renderSheet(); });
+}
+
+/* ================================================================
+   8. Actions générales
+   ================================================================ */
+function renderAll(){ renderRail(); renderSheet(); }
+
+document.querySelectorAll('.solswitch button').forEach(b=>{
+  b.addEventListener('click', ()=>{ state.sol = b.dataset.sol; renderAll(); });
+});
+
+document.getElementById('btnCopy').addEventListener('click', ()=>{
+  state.B = JSON.parse(JSON.stringify(state.A));
+  state.sol = 'B'; renderAll();
+});
+document.getElementById('btnPrint').addEventListener('click', ()=>window.print());
+
+document.getElementById('btnExport').addEventListener('click', ()=>{
+  const blob = new Blob([JSON.stringify({v:1, projet:state.projet, A:state.A, B:state.B}, null, 2)], {type:'application/json'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = (state.projet.nom || 'etude-chaussee').replace(/[^\w\-]+/g,'_') + '.json';
+  a.click(); URL.revokeObjectURL(a.href);
+});
+document.getElementById('btnImport').addEventListener('click', ()=>document.getElementById('fileIn').click());
+document.getElementById('fileIn').addEventListener('change', e=>{
+  const f = e.target.files[0]; if(!f) return;
+  const rd = new FileReader();
+  rd.onload = () => {
+    try{
+      const o = JSON.parse(rd.result);
+      if(o.A) state.A = Object.assign(nouvelleSolution(), o.A);
+      if(o.B) state.B = Object.assign(nouvelleSolution(), o.B);
+      if(o.projet) state.projet = Object.assign(state.projet, o.projet);
+      renderAll();
+    }catch(err){ alert("Fichier illisible : ce n'est pas une étude StructUrb+."); }
+  };
+  rd.readAsText(f); e.target.value = '';
+});
+
+document.getElementById('btnBase').addEventListener('click', ()=>{
+  document.getElementById('baseBody').innerHTML = `
+    <p style="margin:0 0 14px;font-size:12.5px;color:var(--ink2)">
+      Facteurs d'émission repris du classeur d'impact environnemental fourni. Le renouvellement vaut 50 / durée de vie
+      de référence ; la colonne « 50 ans » est le facteur appliqué au mètre cube en place.</p>
+    <table class="det"><thead><tr><th>Produit</th><th class="n">kgCO₂e/UF</th><th class="n">DVR</th><th class="n">Renouv.</th><th class="n">kgCO₂e/m³ à 50 ans</th><th>Source</th></tr></thead><tbody>
+    ${D.carbone.map(p=>`<tr><td><span class="swatch" style="background:${FAM_FILL[famCarbone(p.n)]}"></span>${esc(p.n)}</td>
+      <td class="n">${fr(p.h,1)}</td><td class="n">${p.dvr}</td><td class="n">×${fr(50/p.dvr,1)}</td>
+      <td class="n">${fr(p.h*50/p.dvr,1)}</td><td style="font-size:11px;color:var(--ink3)">${esc(p.src)}</td></tr>`).join('')}
+    ${D.deblais.map(p=>`<tr class="sub"><td>${esc(p.n)} <span style="color:var(--ink3)">— par tonne</span></td>
+      <td class="n">${fr(p.h,2)}</td><td class="n">${p.dvr}</td><td class="n">×1,0</td><td class="n">${fr(p.h,2)}</td>
+      <td style="font-size:11px;color:var(--ink3)">${esc(p.src)}</td></tr>`).join('')}
+    </tbody></table>
+    <p style="margin:16px 0 0;font-size:12.5px;color:var(--ink2)">Création de plate-forme :
+      ${Object.entries(D.pfco2).map(([k,v])=>`${k} = ${v} kgCO₂e/m²`).join(' · ')}.</p>`;
+  document.getElementById('dlgBase').showModal();
+});
+function famCarbone(n){
+  const s = n.toLowerCase();
+  if(/bbsg|bbme|bbm |bbtm|bbdr|enduit|émulsion|eme|gb2|gb3|gb4/.test(s)) return 'bit';
+  if(/gc3|gc4|sc |glg|gcv/.test(s)) return 'hyd';
+  if(/bc5|bc3|béton/.test(s)) return 'bet';
+  if(/pavé/.test(s)) return 'pav';
+  if(/lit de pose/.test(s)) return 'pose';
+  return 'gnt';
+}
+
+/* ================================================================
+   9. Démarrage — un exemple lisible plutôt qu'un écran vide
+   ================================================================ */
+(function init(){
+  // A : chaussée bitumineuse classique — Enrobés/GB3
+  state.A.voie = 2; state.A.famille = 2;
+  const a1 = D.structures.find(s=>s.n==='Enrobés/GB3' && s.ts===2 && s.v[1]===1);
+  if(a1) state.A.structIdx = a1.i;
+  state.A.ti = 60; state.A.ds = 20; state.A.ca = 2; state.A.pf = 1;
+
+  // B : même trafic, structure souple Enrobés/GNT/GNT
+  state.B.voie = 2; state.B.famille = 1;
+  const b1 = D.structures.find(s=>s.n==='Enrobés/GNT/GNT' && s.ts===1 && s.v[1]===1);
+  if(b1) state.B.structIdx = b1.i;
+  state.B.ti = 60; state.B.ds = 20; state.B.ca = 2; state.B.pf = 1;
+
+  state.projet.nom = "Requalification de voirie — exemple";
+  renderAll();
+})();
+</script>
+</body>
+</html>

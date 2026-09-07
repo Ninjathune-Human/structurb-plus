@@ -42,8 +42,7 @@ ligne, sans serveur ni installation, et peut être posé sur un partage réseau.
 
 ## Reconstruire depuis les sources
 
-Les fichiers de données binaires du Cerema ne sont pas versionnés ici. Récupérez-les
-et relancez la chaîne de construction :
+Les fichiers de données binaires du Cerema ne sont pas versionnés.
 
 ## Conventions de calcul à connaître
 

@@ -66,8 +66,10 @@ button,input,select,textarea{font:inherit;color:inherit}
 
 /* ---------------------------- volet gauche --------------------- */
 .rail{
-  width:400px;flex:0 0 400px;border-right:1px solid var(--ink);
+  /* moitié de l'écran sur un poste de bureau, sans descendre sous une largeur utile */
+  width:clamp(400px, 46%, 1000px);flex:0 0 auto;border-right:1px solid var(--ink);
   background:var(--panel);display:flex;flex-direction:column;min-height:0;
+  container-type:inline-size;   /* la saisie s'adapte à SA largeur, pas à celle de l'écran */
 }
 .solswitch{display:flex;border-bottom:1px solid var(--ink);flex:0 0 auto}
 .solswitch button{
@@ -75,12 +77,40 @@ button,input,select,textarea{font:inherit;color:inherit}
   border-right:1px solid var(--rule);position:relative;
 }
 .solswitch button:last-child{border-right:0}
-.solswitch button .lbl{display:block;font-family:var(--mono);font-size:10px;letter-spacing:.14em;color:var(--ink3);text-transform:uppercase}
-.solswitch button .val{display:block;font-size:13px;font-weight:600;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+/* L'onglet inactif s'efface : le contraste porte le repère, pas seulement le fond.
+   Le nom de l'onglet reste lisible — c'est lui qui identifie la solution. */
+.solswitch button .lbl{display:block;font-family:var(--mono);font-size:10px;letter-spacing:.14em;color:var(--ink2);text-transform:uppercase;transition:color .14s}
+.solswitch button .val{display:block;font-size:13px;font-weight:500;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--ink3);transition:color .14s}
+.solswitch button:hover .val{color:var(--ink2)}
 .solswitch button[aria-selected="true"]{background:var(--sheet)}
+.solswitch button[aria-selected="true"] .val{color:var(--ink);font-weight:600}
+.solswitch button[data-sol="A"][aria-selected="true"] .lbl{color:var(--a)}
+.solswitch button[data-sol="B"][aria-selected="true"] .lbl{color:var(--b)}
 .solswitch button[aria-selected="true"]::before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px}
 .solswitch button[data-sol="A"][aria-selected="true"]::before{background:var(--a)}
 .solswitch button[data-sol="B"][aria-selected="true"]::before{background:var(--b)}
+
+/* interrupteur porté par l'en-tête d'étape */
+.switch{
+  display:inline-flex;align-items:center;gap:7px;border:0;background:transparent;
+  padding:2px 0;cursor:pointer;font-size:11.5px;color:var(--ink2);flex:0 0 auto
+}
+.switch .track{
+  width:30px;height:17px;border-radius:9px;background:var(--rule);
+  position:relative;flex:0 0 auto;transition:background .14s
+}
+.switch .knob{
+  position:absolute;top:2px;left:2px;width:13px;height:13px;border-radius:50%;
+  background:#fff;box-shadow:0 1px 2px rgba(0,0,0,.3);transition:transform .14s
+}
+.switch:hover .track{background:var(--ink3)}
+.switch[aria-checked="true"]{color:var(--ink)}
+.switch[aria-checked="true"] .track{background:var(--ink)}
+.switch[aria-checked="true"] .knob{transform:translateX(13px)}
+
+.step .body > p.off{
+  margin:10px 0 0;font-size:12px;line-height:1.5;color:var(--ink2);max-width:60ch
+}
 
 .railscroll{overflow-y:auto;flex:1;min-height:0}
 
@@ -90,6 +120,21 @@ button,input,select,textarea{font:inherit;color:inherit}
 }
 .step > summary::-webkit-details-marker{display:none}
 .step > summary:hover{background:var(--sheet)}
+
+/* Chevron d'état : pointe vers le bas quand l'étape est repliée, vers le haut
+   quand elle est ouverte. Il pivote pour que le changement soit perceptible. */
+.step > summary::after{
+  content:"";width:7px;height:7px;flex:0 0 auto;align-self:center;margin-left:2px;
+  border-right:1.4px solid var(--ink3);border-bottom:1.4px solid var(--ink3);
+  transform:translateY(-2px) rotate(45deg);
+  transition:transform .18s ease, border-color .18s;
+}
+.step > summary:hover::after{border-color:var(--ink2)}
+.step[open] > summary::after{transform:translateY(1px) rotate(-135deg);border-color:var(--ink)}
+
+/* Le numéro d'étape s'affirme lui aussi une fois l'étape ouverte. */
+.step .idx{transition:color .18s}
+.step[open] > summary .idx{color:var(--ink)}
 .step .idx{font-family:var(--mono);font-size:11px;color:var(--ink3);width:14px;flex:0 0 auto}
 .step .ttl{font-size:13px;font-weight:600;letter-spacing:-.005em;flex:1}
 .step .chip{
@@ -120,7 +165,7 @@ input:hover,select:hover{border-color:var(--ink2)}
 
 .seg{display:flex;flex-wrap:wrap;gap:0;border:1px solid var(--rule);border-radius:2px;overflow:hidden;background:#fff}
 .seg button{
-  flex:1;min-width:52px;border:0;border-right:1px solid var(--rule2);background:transparent;
+  flex:1;min-width:42px;border:0;border-right:1px solid var(--rule2);background:transparent;
   padding:7px 4px;cursor:pointer;font-size:12px;
 }
 .seg button:last-child{border-right:0}
@@ -165,6 +210,13 @@ input:hover,select:hover{border-color:var(--ink2)}
 .aidebox > summary:hover{color:var(--ink)}
 .aidebox[open] > summary{border-bottom:1px solid var(--rule2);color:var(--ink)}
 .aidebox[open] > summary::before{background:var(--ink);color:#fff;border-color:var(--ink)}
+.aidebox > summary::after{
+  content:"";width:6px;height:6px;margin-left:auto;flex:0 0 auto;
+  border-right:1.3px solid var(--ink3);border-bottom:1.3px solid var(--ink3);
+  transform:translateY(-2px) rotate(45deg);
+  transition:transform .18s ease, border-color .18s;
+}
+.aidebox[open] > summary::after{transform:translateY(1px) rotate(-135deg);border-color:var(--ink)}
 .doc{padding:8px 12px 12px;font-size:12px;line-height:1.5;color:var(--ink2);max-height:330px;overflow:auto}
 .doc h4{margin:14px 0 5px;font-size:11.5px;color:var(--ink);font-weight:600}
 .doc h4:first-child{margin-top:0}
@@ -198,7 +250,7 @@ table.mini select{padding:4px 20px 4px 6px;font-size:11.5px;background-position:
 /* ---------------------------- feuille -------------------------- */
 .sheetwrap{flex:1;overflow-y:auto;min-width:0;background:var(--paper);padding:22px}
 .sheet{
-  max-width:1080px;margin:0 auto;background:var(--sheet);border:1px solid var(--ink);
+  max-width:1200px;margin:0 auto;background:var(--sheet);border:1px solid var(--ink);
   box-shadow:0 1px 0 var(--rule),0 12px 28px -22px rgba(0,0,0,.5);
 }
 .sheethead{display:flex;border-bottom:1px solid var(--ink)}
@@ -218,7 +270,7 @@ table.mini select{padding:4px 20px 4px 6px;font-size:11.5px;background-position:
 }
 .section > .sub{font-size:11.5px;color:var(--ink2);margin-bottom:14px}
 
-svg.coupe{display:block;width:100%;height:auto}
+svg.coupe{display:block;width:100%;max-width:860px;height:auto;margin:0 auto}
 
 /* barres carbone */
 .bars{margin-top:6px}
@@ -270,6 +322,13 @@ dialog .dh{display:flex;justify-content:space-between;align-items:center;padding
 dialog .dh h3{margin:0;font-size:15px;font-stretch:112%;font-weight:700}
 dialog .db{padding:16px 18px;max-height:64vh;overflow:auto}
 
+@container (min-width:560px){
+  .step .body{display:grid;grid-template-columns:1fr 1fr;gap:0 20px;align-items:start}
+  .step .body > *{grid-column:1 / -1}          /* lecture, notices, notes : pleine largeur */
+  .step .body > .field{grid-column:auto}        /* champs : deux par ligne */
+  .step .body > .field:has(table),
+  .step .body > .field:has(.opts){grid-column:1 / -1}
+}
 @media (max-width:1080px){
   .main{flex-direction:column}
   .rail{width:auto;flex:0 0 auto;border-right:0;border-bottom:1px solid var(--ink);max-height:52vh}
@@ -437,20 +496,27 @@ const famOf = m => FAM_MAT[m] || 'gnt';
 /* ================================================================
    3. État
    ================================================================ */
+/** Station météo proposée au départ, retrouvée par son nom pour rester juste
+ *  si le catalogue est régénéré. */
+const STATION_DEFAUT = (() => {
+  const i = D.stations.findIndex(s => s.nom === "Nice");
+  return i >= 0 ? i : 0;
+})();
+
 function nouvelleSolution(){
   return {
     voie:2, qualite:1, ti:60, ds:20, ca:2, cam:null,
-    famille:2, structIdx:null, pf:1, composition:0,
+    famille:2, structKey:null, pf:1, composition:0,
     // gel
-    gel:false, station:65, hiver:'HRNE', agglo:0, sol:3, hn:35, cfTraitee:false,
+    gel:false, station:STATION_DEFAUT, hiver:'HRNE', agglo:0, sol:3, hn:35, cfTraitee:false,
     // carbone
-    pfExistante:true, epES:1.5, pctReutil:70, densite:1.0, produits:{},
+    pfExistante:true, epES:1.5, pctReutil:70, densite:null, produits:{},
   };
 }
 const state = {
   sol:'A',
   A:nouvelleSolution(),
-  B:Object.assign(nouvelleSolution(), {famille:1, ti:40, structIdx:null}),
+  B:Object.assign(nouvelleSolution(), {famille:1, ti:40, structKey:null}),
   horizon:'50',
   projet:{nom:"", phase:"AVP", indice:"A", surface:1000, auteur:"", date:new Date().toISOString().slice(0,10)},
   open:{1:true,2:true,3:true,4:true,5:false,6:true,7:false},
@@ -462,7 +528,20 @@ function structuresDispo(sol){
   const v = VOIES.find(x=>x.id===sol.voie);
   return D.structures.filter(s => s.v[v.idx]===1 && s.ts===sol.famille);
 }
-const structOf = sol => sol.structIdx==null ? null : D.structures.find(s=>s.i===sol.structIdx && s.ts===sol.famille) || null;
+/** Identifiant stable d'une structure : l'index seul est ambigu au catalogue. */
+const keyOf = s => s.i + '/' + s.ts;
+
+/**
+ * Structure retenue, ou null si le choix mémorisé n'est pas admis par les
+ * paramètres du moment. Le choix n'est jamais effacé : revenir à une voie et à
+ * une famille compatibles le fait réapparaître tel quel.
+ */
+function structOf(sol){
+  if(sol.structKey == null) return null;
+  const s = D.structures.find(x => keyOf(x) === sol.structKey);
+  if(!s || s.ts !== sol.famille) return null;
+  return s.v[VOIES.find(v => v.id === sol.voie).idx] === 1 ? s : null;
+}
 
 /* ================================================================
    4. Moteur — calcul complet d'une solution
@@ -612,13 +691,25 @@ function bilanCarbone(sol, r){
   const epDeb = r.total/100;
   const pr = sol.pctReutil/100;
   const dReu = D.deblais[0], dSto = D.deblais[1];
-  const debReu = dReu.h * epDeb * pr      * sol.densite;
-  const debSto = dSto.h * epDeb * (1-pr)  * sol.densite;
+
+  // Masse volumique des déblais : moyenne pondérée des couches, avec les valeurs
+  // du classeur (2,35 pour les enrobés, 2,10 pour la GNT, 1,80 pour le sable).
+  // L'utilisateur peut la remplacer s'il connaît la nature réelle du sol en place.
+  const epTot = lignes.reduce((a,l)=>a+l.epc, 0);
+  const densiteCalc = epTot > 0
+    ? lignes.reduce((a,l)=>a + l.epc * ((prod(l.produit)||{}).d || 2.1), 0) / epTot
+    : 2.1;
+  const densite = sol.densite == null ? densiteCalc : sol.densite;
+  const tonnage = epDeb * densite;                 // t/m² de chaussée
+
+  const debReu = dReu.h * tonnage * pr;
+  const debSto = dSto.h * tonnage * (1-pr);
   const deblais = debReu + debSto;
 
   const plate = sol.pfExistante ? 0 : (D.pfco2[PF[sol.pf]] || 0);
 
-  return {lignes, postes, parMateriau, structImm, struct50, deblais, debReu, debSto, epDeb, plate,
+  return {lignes, postes, parMateriau, structImm, struct50, deblais, debReu, debSto, epDeb,
+          densite, densiteCalc, tonnage, plate,
           totImm: structImm + deblais + plate,
           tot50 : struct50  + deblais + plate};
 }
@@ -730,7 +821,7 @@ function renderRail(){
   });
   ['A','B'].forEach(k=>{
     const s = structOf(state[k]);
-    document.getElementById('sw'+k).textContent = s ? s.n : "Non définie";
+    document.getElementById('sw'+k).textContent = s ? s.n : "À définir";
   });
 
   /* — 1 · Voie — */
@@ -781,7 +872,7 @@ function renderRail(){
 
   /* — 3 · Structure — */
   const dispo = structuresDispo(sol);
-  rail.appendChild(step(3, "Structure", st? st.n : "Non définie", st?null:'warn', `
+  rail.appendChild(step(3, "Structure", st? st.n : "À définir", st?null:'warn', `
     <div class="field">
       <span class="legend">Famille</span>
       <div class="seg" id="fFam" style="flex-wrap:wrap">
@@ -792,10 +883,21 @@ function renderRail(){
         }).join('')}
       </div>
     </div>
+    ${(() => {
+      // Un choix mémorisé mais masqué : on dit pourquoi plutôt que de faire silence.
+      if(st || sol.structKey == null) return '';
+      const m = D.structures.find(x => keyOf(x) === sol.structKey);
+      if(!m) return '';
+      const bonneVoie = m.v[VOIES.find(v=>v.id===sol.voie).idx] === 1;
+      const fam = FAMILLES.find(f=>f.id===m.ts);
+      return `<div class="note">Votre choix, <b>${esc(m.n)}</b>, ${bonneVoie
+        ? `appartient à la famille ${esc(fam.nom.toLowerCase())} : sélectionnez-la pour le retrouver.`
+        : `n'est pas admis pour une ${esc(VOIES.find(v=>v.id===sol.voie).nom.toLowerCase())}. Il reste mémorisé.`}</div>`;
+    })()}
     <div class="field">
       <span class="legend">Structure type — ${dispo.length} au catalogue</span>
       ${dispo.length? `<div class="opts" id="fStruct">${dispo.map(s=>`
-        <button data-v="${s.i}" aria-pressed="${st&&st.i===s.i}">
+        <button data-v="${keyOf(s)}" aria-pressed="${st&&keyOf(st)===keyOf(s)}">
           <span>${esc(s.n)}</span>
           <span class="meta">${abrege(s.ne[0])}–${abrege(s.ne[1])} NE</span>
         </button>`).join('')}</div>`
@@ -858,32 +960,31 @@ function renderRail(){
     <div class="row2">
       <div class="field"><label for="fReu">Déblais réutilisés <span class="hint" style="display:inline">%</span></label>
         <input type="number" id="fReu" class="numin" min="0" max="100" step="5" value="${sol.pctReutil}"></div>
-      <div class="field"><label for="fDens">Masse volumique déblais <span class="hint" style="display:inline">t/m³</span></label>
-        <input type="number" id="fDens" class="numin" min="0.5" max="2.5" step="0.1" value="${sol.densite}"></div>
+      <div class="field"><label for="fDens">Masse volumique des déblais <span class="hint" style="display:inline">t/m³</span></label>
+        <input type="number" id="fDens" class="numin" min="0.8" max="3" step="0.05"
+               value="${fr2(co2.densite)}" placeholder="${fr2(co2.densiteCalc)}">
+        <div class="hint">${sol.densite == null
+          ? `calculée d'après la composition — ${fr(co2.tonnage,2)} t/m² de déblais`
+          : `imposée ; la composition donnerait ${fr2(co2.densiteCalc)} — ${fr(co2.tonnage,2)} t/m²`}</div></div>
     </div>
     ${r.couches.some(c=>c.ghost)?`<div class="field"><label for="fEps">Épaisseur retenue pour l'enduit superficiel <span class="hint" style="display:inline">cm</span></label>
       <input type="number" id="fEps" class="numin" min="0.5" max="5" step="0.5" value="${sol.epES}"></div>`:''}
     <div class="readout">
       <div class="r"><span class="k">Structure — pose initiale</span><span class="v">${fr(co2.structImm,1)}</span></div>
       <div class="r"><span class="k">Structure — 50 ans avec renouvellements</span><span class="v">${fr(co2.struct50,1)}</span></div>
-      <div class="r"><span class="k">Déblais (${fr(co2.epDeb*100)} cm)</span><span class="v">${fr(co2.deblais,1)}</span></div>
+      <div class="r"><span class="k">Déblais — ${fr(co2.epDeb*100)} cm, ${fr(co2.tonnage,2)} t/m²</span><span class="v">${fr(co2.deblais,1)}</span></div>
       <div class="r"><span class="k">Plate-forme</span><span class="v">${fr(co2.plate,1)}</span></div>
       <div class="r"><span class="k"><b>Total 50 ans</b></span><span class="v big">${fr(co2.tot50,1)} kg/m²</span></div>
     </div>
     <div class="note">Facteurs issus du classeur d'impact environnemental fourni (fiches SEVE TP et INIES). Le renouvellement vaut 50 / durée de vie de référence : un enrobé à 20 ans est compté 2,5 fois sur la période.
-    <br><br>La masse volumique des déblais convertit l'épaisseur en tonnage. <b>1,0 t/m³</b> reproduit exactement le calcul du classeur ; 1,8 à 2,1 t/m³ correspond à des déblais réels.</div>
+    <br><br>Le poste déblais est facturé à la tonne. La masse volumique est déduite de la composition de la structure, avec les valeurs du classeur — 2,35 pour les enrobés, 2,10 pour la GNT, 1,80 pour le sable. Remplacez-la si vous connaissez la nature réelle des matériaux en place.</div>
     `:'<div class="note">Le bilan apparaît dès que les épaisseurs sont déterminées.</div>'}`));
 
   /* — 7 · Gel — */
   rail.appendChild(step(7, "Vérification au gel",
-    sol.gel ? (r.gel ? (r.gel.horsGel?"Hors gel":(r.gel.ok?"Satisfaisante":"Insuffisante")) : "—") : "Désactivée",
+    // la pastille ne porte plus que le résultat ; l'activation est un vrai contrôle
+    sol.gel ? (r.gel ? (r.gel.horsGel?"Hors gel":(r.gel.ok?"Satisfaisante":"Insuffisante")) : "—") : null,
     sol.gel && r.gel && !r.gel.ok && !r.gel.horsGel ? 'bad' : null, `
-    <div class="field">
-      <div class="seg" id="fGel">
-        <button data-v="0" aria-pressed="${!sol.gel}">Ne pas vérifier</button>
-        <button data-v="1" aria-pressed="${sol.gel}">Vérifier</button>
-      </div>
-    </div>
     ${sol.gel?`
     <div class="field"><label for="fStation">Station météo de référence</label>
       <select id="fStation">${D.stations.map((s,i)=>`<option value="${i}" ${sol.station===i?'selected':''}>${esc(s.nom)} (${s.dpt}) — ${s.alt} m</option>`).join('')}</select></div>
@@ -907,8 +1008,13 @@ function renderRail(){
       <div class="r"><span class="k">Indice de gel admissible de la chaussée</span><span class="v big">${r.gel.horsGel?'Hors gel':fr(r.gel.adm)+' °C·j'}</span></div>
       <div class="r ${r.gel.horsGel||r.gel.ok?'':'err'}"><span class="k">Résultat</span><span class="v">${r.gel.horsGel?'Sol non gélif':(r.gel.ok?'Vérification satisfaite':'Renforcer la couche de forme')}</span></div>
     </div>`:'<div class="note">Déterminez d\'abord les épaisseurs.</div>'}
-    `:'<div class="note">La vérification au gel/dégel compare l\'indice de gel admissible de la structure à l\'indice atmosphérique de référence corrigé de l\'effet d\'îlot de chaleur urbain.</div>'}
-    ${aideBox('gel')}`));
+    `:`<p class="off">La vérification au gel/dégel compare l'indice de gel admissible de la structure
+       à l'indice atmosphérique de référence corrigé de l'effet d'îlot de chaleur urbain.
+       Elle s'impose dès que le sol support est gélif.</p>`}
+    ${aideBox('gel')}`,
+    `<button type="button" class="switch" id="fGelSw" role="switch" aria-checked="${sol.gel}"
+             title="Activer ou désactiver la vérification au gel">
+       <span class="track"><span class="knob"></span></span>Vérifier</button>`));
 
   bindRail();
 }
@@ -916,9 +1022,11 @@ function renderRail(){
 const fr2 = n => String(Math.round(n*100)/100);
 const abrege = n => n>=1e6 ? (n/1e6).toFixed(n%1e6?1:0).replace('.',',')+" M" : (n>=1000 ? (n/1000)+" k" : n);
 
-function step(n, titre, chip, chipCls, body){
+function step(n, titre, chip, chipCls, body, ctrl){
   return el(`<details class="step" data-step="${n}" ${state.open[n]?'open':''}>
-    <summary><span class="idx num">${n}</span><span class="ttl">${titre}</span><span class="chip ${chipCls||''}">${esc(chip)}</span></summary>
+    <summary><span class="idx num">${n}</span><span class="ttl">${titre}</span>
+      ${chip ? `<span class="chip ${chipCls||''}">${esc(chip)}</span>` : ''}
+      ${ctrl || ''}</summary>
     <div class="body">${body}</div></details>`);
 }
 
@@ -947,23 +1055,24 @@ function bindRail(){
   const fVoie = document.getElementById('fVoie');
   if(fVoie) fVoie.addEventListener('change', ()=>{
     sol.voie = +fVoie.value;
-    const d = structuresDispo(sol);
-    if(!d.some(s=>s.i===sol.structIdx)){
-      const fam = FAMILLES.find(f=>D.structures.some(s=>s.v[VOIES.find(v=>v.id===sol.voie).idx]===1 && s.ts===f.id));
-      if(fam && !D.structures.some(s=>s.v[VOIES.find(v=>v.id===sol.voie).idx]===1 && s.ts===sol.famille)) sol.famille = fam.id;
-      sol.structIdx = null;
-    }
-    sol.cam = null; renderAll();
+    sol.cam = null;      // la plage de CAM dépend du type de voie
+    renderAll();
   });
 
   seg('fQual', v=>{ sol.qualite = +v; });
   seg('fCa',   v=>{ sol.ca = +v; });
-  seg('fFam',  v=>{ sol.famille = +v; sol.structIdx = null; sol.cam = null; });
-  seg('fStruct', v=>{ sol.structIdx = +v; sol.composition = 0; sol.cam = null; });
+  seg('fFam',  v=>{ sol.famille = +v; sol.cam = null; });
+  seg('fStruct', v=>{ sol.structKey = v; sol.composition = 0; sol.cam = null; });
   seg('fPf',   v=>{ sol.pf = +v; });
   seg('fPfEx', v=>{ sol.pfExistante = v==='1'; });
   seg('fCompo',v=>{ sol.composition = +v; });
-  seg('fGel',  v=>{ sol.gel = v==='1'; state.open[7] = true; });
+  const gsw = document.getElementById('fGelSw');
+  if(gsw) gsw.addEventListener('click', e=>{
+    e.preventDefault(); e.stopPropagation();   // agir sans replier l'étape
+    sol.gel = !sol.gel;
+    if(sol.gel) state.open[7] = true;
+    renderAll();
+  });
   seg('fHiver',v=>{ sol.hiver = v; });
   seg('fSol',  v=>{ sol.sol = +v; });
   seg('fCf',   v=>{ sol.cfTraitee = v==='1'; });
@@ -972,7 +1081,7 @@ function bindRail(){
   num('fDs',  v=>{ sol.ds = isNaN(v)?1:Math.max(1,v); });
   num('fCam', v=>{ sol.cam = isNaN(v)?null:v; });
   num('fReu', v=>{ sol.pctReutil = isNaN(v)?0:Math.min(100,Math.max(0,v)); });
-  num('fDens',v=>{ sol.densite = isNaN(v)?1:v; });
+  num('fDens',v=>{ sol.densite = isNaN(v) ? null : v; });   // vider le champ = valeur calculée
   num('fEps', v=>{ sol.epES = isNaN(v)?1.5:v; });
   num('fHn',  v=>{ sol.hn = isNaN(v)?0:v; });
 
@@ -1018,7 +1127,11 @@ function headSheet(rA, rB){
     return `<div class="col">
       <div class="tag"><span class="dot" style="background:${col}"></span><span class="eyebrow">Solution ${k}</span></div>
       <h2 class="${st?'':'empty'}">${st? esc(st.n) : "À définir"}</h2>
-      <div class="meta">${st? `${esc(VOIES.find(v=>v.id===r.sol.voie).court)} · Q${r.sol.qualite} · ${PF[r.sol.pf]} · NE ${fr(r.ne)}${r.total?` · ${r.total} cm`:''}` : "Choisissez une famille puis une structure"}</div>
+      <div class="meta">${st
+        ? `${esc(VOIES.find(v=>v.id===r.sol.voie).court)} · Q${r.sol.qualite} · ${PF[r.sol.pf]} · NE ${fr(r.ne)}${r.total?` · ${r.total} cm`:''}`
+        : (structuresDispo(r.sol).length
+            ? "Choisissez une structure type à l'étape 3"
+            : "Choisissez une famille puis une structure à l'étape 3")}</div>
     </div>`;
   };
   return `<div class="sheethead">${c(rA,'A','var(--a)')}${c(rB,'B','var(--b)')}</div>`;
@@ -1087,7 +1200,7 @@ function coupeSVG(rA, rB){
   const colonne = (r, x, side, col) => {
     if(!r.couches || !r.couches.length){
       const l1 = r.L && r.L.maxPra ? "maximum" : (r.st ? "hors" : "structure");
-      const l2 = r.L && r.L.maxPra ? "pratique dépassé" : (r.st ? "domaine de la structure" : "non définie");
+      const l2 = r.L && r.L.maxPra ? "pratique dépassé" : (r.st ? "domaine de la structure" : "à définir");
       const c2 = r.L && r.L.maxPra ? "#A8322A" : "#8D948B";
       return `<rect x="${x}" y="${top}" width="${colW}" height="${Math.max(60,maxTot*scale)}" fill="#fff" stroke="#C3C8C0" stroke-dasharray="4 3"/>
         <text x="${x+colW/2}" y="${top+40}" text-anchor="middle" font-size="11" fill="${c2}">${l1}</text>
@@ -1197,7 +1310,7 @@ function sectionCarbone(rA, rB){
     verdict = `<div class="verdict">
       <div class="cell"><div class="k">Total ${h50?'50 ans':'à la pose'}</div><div class="v">${fr(val(c),1)} <small>kgCO₂e/m²</small></div></div>
       <div class="cell"><div class="k">Sur ${fr(surface)} m² de projet</div><div class="v">${fr(val(c)*surface/1000,1)} <small>t CO₂e</small></div></div>
-      <div class="cell"><div class="k">Comparaison</div><div class="v" style="font-size:14px;font-weight:500">Définissez la seconde solution</div></div>
+      <div class="cell"><div class="k">Comparaison</div><div class="v" style="font-size:14px;font-weight:500">Solution ${a?'B':'A'} à définir</div></div>
     </div>`;
   }
 
@@ -1250,7 +1363,7 @@ function sectionDetail(rA, rB){
                 l.passes>1?` en ${l.passes} couches`:''}</span></td>
             <td class="n">${l.ghost?fr(r.sol.epES,1):l.ep}</td><td class="n">${l.dvr}</td>
             <td class="n">×${fr(l.R,1)}</td><td class="n">${fr(l.cinq,1)}</td></tr>`).join('')}
-          <tr class="sub"><td>Déblais — ${fr(c.epDeb*100)} cm, ${fr(r.sol.pctReutil)} % réutilisés</td>
+          <tr class="sub"><td>Déblais — ${fr(c.epDeb*100)} cm à ${fr2(c.densite)} t/m³, ${fr(r.sol.pctReutil)} % réutilisés</td>
             <td class="n">—</td><td class="n">50</td><td class="n">×1,0</td><td class="n">${fr(c.deblais,1)}</td></tr>
           ${c.plate>0?`<tr class="sub"><td>Création de plate-forme ${PF[r.sol.pf]}</td><td class="n">—</td><td class="n">—</td><td class="n">—</td><td class="n">${fr(c.plate,1)}</td></tr>`:''}
           <tr class="tot"><td>Total 50 ans</td><td class="n"></td><td class="n"></td><td class="n"></td><td class="n">${fr(c.tot50,1)}</td></tr>
@@ -1336,8 +1449,20 @@ document.getElementById('fileIn').addEventListener('change', e=>{
   rd.onload = () => {
     try{
       const o = JSON.parse(rd.result);
-      if(o.A) state.A = Object.assign(nouvelleSolution(), o.A);
-      if(o.B) state.B = Object.assign(nouvelleSolution(), o.B);
+      // études enregistrées avant l'adoption de la clé composée
+      const migrer = x => {
+        // 1,0 t/m³ était l'ancienne valeur par défaut, sans réalité physique :
+        // on repasse au calcul d'après la composition.
+        if(x && x.densite === 1) x.densite = null;
+        if(x && x.structKey == null && x.structIdx != null){
+          const m = D.structures.find(s => s.i === x.structIdx && s.ts === x.famille);
+          if(m) x.structKey = keyOf(m);
+        }
+        delete x.structIdx;
+        return x;
+      };
+      if(o.A) state.A = Object.assign(nouvelleSolution(), migrer(o.A));
+      if(o.B) state.B = Object.assign(nouvelleSolution(), migrer(o.B));
       if(o.projet) state.projet = Object.assign(state.projet, o.projet);
       renderAll();
     }catch(err){ alert("Fichier illisible : ce n'est pas une étude StructUrb+."); }
@@ -1379,13 +1504,13 @@ function famCarbone(n){
   // A : chaussée bitumineuse classique — Enrobés/GB3
   state.A.voie = 2; state.A.famille = 2;
   const a1 = D.structures.find(s=>s.n==='Enrobés/GB3' && s.ts===2 && s.v[1]===1);
-  if(a1) state.A.structIdx = a1.i;
+  if(a1) state.A.structKey = keyOf(a1);
   state.A.ti = 60; state.A.ds = 20; state.A.ca = 2; state.A.pf = 1;
 
   // B : même trafic, structure souple Enrobés/GNT/GNT
   state.B.voie = 2; state.B.famille = 1;
   const b1 = D.structures.find(s=>s.n==='Enrobés/GNT/GNT' && s.ts===1 && s.v[1]===1);
-  if(b1) state.B.structIdx = b1.i;
+  if(b1) state.B.structKey = keyOf(b1);
   state.B.ti = 60; state.B.ds = 20; state.B.ca = 2; state.B.pf = 1;
 
   state.projet.nom = "Requalification de voirie — exemple";

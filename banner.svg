@@ -1,0 +1,109 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 470" width="1600" height="470" role="img"
+     aria-label="StructUrb+ — dimensionnement de chaussée urbaine et bilan carbone à 50 ans">
+  <title>StructUrb+</title>
+  <desc>Coupe d'une chaussée bitumineuse : 6 cm de BBSG, 10 cm de GB3, 20 cm de GNT sur plate-forme PF2.</desc>
+  <defs>
+    <pattern id="b-bit" width="6" height="6" patternUnits="userSpaceOnUse">
+      <rect width="6" height="6" fill="#2B2D2F"/>
+      <circle cx="1.5" cy="1.5" r=".7" fill="#4a4d50"/><circle cx="4.5" cy="4" r=".6" fill="#43464a"/>
+    </pattern>
+    <pattern id="b-bit2" width="6" height="6" patternUnits="userSpaceOnUse">
+      <rect width="6" height="6" fill="#232527"/>
+      <circle cx="2" cy="2" r=".75" fill="#3d4043"/><circle cx="4.8" cy="4.6" r=".6" fill="#383b3e"/>
+    </pattern>
+    <pattern id="b-gnt" width="9" height="9" patternUnits="userSpaceOnUse">
+      <rect width="9" height="9" fill="#9C9384"/>
+      <circle cx="2" cy="2.5" r="1.5" fill="#87806f"/><circle cx="6.5" cy="6" r="1.8" fill="#aaa192"/>
+      <circle cx="7" cy="1.5" r="1" fill="#7d7566"/>
+    </pattern>
+    <pattern id="b-sol" width="8" height="8" patternUnits="userSpaceOnUse">
+      <rect width="8" height="8" fill="#E6E8E3"/>
+      <path d="M-1 7 L7 -1 M1 9 L9 1" stroke="#B4BAB3" stroke-width="1"/>
+    </pattern>
+  </defs>
+
+  <rect width="1600" height="470" fill="#E6E8E3"/>
+
+  <!-- marque -->
+  <g transform="translate(90 84)">
+    <rect x="0" y="0"  width="46" height="9"  fill="#14171A"/>
+    <rect x="0" y="12" width="46" height="11" fill="#9C9384"/>
+    <rect x="0" y="26" width="46" height="13" fill="#C3C8C0"/>
+    <path d="M0 43h46" stroke="#14171A" stroke-width="2.4" stroke-dasharray="4 4"/>
+  </g>
+
+  <!-- titre -->
+  <text x="158" y="98" font-family="IBM Plex Mono, monospace" font-size="14" font-weight="500"
+        letter-spacing="3.4" fill="#8D948B">CATALOGUE DES STRUCTURES TYPES DE CHAUSSÉES URBAINES</text>
+  <text x="156" y="168" font-family="Archivo, Helvetica, sans-serif" font-size="76" font-weight="800"
+        letter-spacing="-2.2" fill="#14171A">StructUrb<tspan fill="#E0A80B">+</tspan></text>
+  <text x="158" y="209" font-family="Archivo, Helvetica, sans-serif" font-size="25"
+        fill="#5E655D">Dimensionnement de chaussée urbaine et bilan carbone à 50 ans</text>
+  <text x="158" y="248" font-family="IBM Plex Mono, monospace" font-size="14" fill="#8D948B"
+        >Application web autonome · d'après Struct-Urb (CERTU / Cerema) · GPL-3.0</text>
+
+  <!-- comparaison carbone de deux solutions -->
+  <g>
+    <text x="1470" y="90" text-anchor="end" font-family="IBM Plex Mono, monospace" font-size="12"
+          font-weight="500" letter-spacing="2.6" fill="#8D948B">BILAN CARBONE À 50 ANS</text>
+
+    <text x="1042" y="138" text-anchor="end" font-family="IBM Plex Mono, monospace" font-size="15"
+          font-weight="600" fill="#0B4F6C">A</text>
+    <rect x="1058" y="120" width="410" height="24" fill="#FFFFFF" stroke="#DCE0D9"/>
+    <rect x="1058" y="120" width="168" height="24" fill="#2B2D2F"/>
+    <rect x="1226" y="120" width="240" height="24" fill="#2B2D2F"/>
+    <path d="M1226 120v24" stroke="#E6E8E3" stroke-width="1.2"/>
+    <rect x="1466" y="120" width="2" height="24" fill="#E0A80B"/>
+
+    <text x="1042" y="186" text-anchor="end" font-family="IBM Plex Mono, monospace" font-size="15"
+          font-weight="600" fill="#5A6B2F">B</text>
+    <rect x="1058" y="168" width="410" height="24" fill="#FFFFFF" stroke="#DCE0D9"/>
+    <rect x="1058" y="168" width="224" height="24" fill="#2B2D2F"/>
+    <rect x="1282" y="168" width="20" height="24" fill="#9C9384"/>
+    <rect x="1302" y="168" width="7" height="24" fill="#E0A80B"/>
+
+    <text x="1058" y="224" font-family="IBM Plex Mono, monospace" font-size="13" fill="#8D948B"
+          >41,6 contre 25,4 kgCO₂e/m² — 39 %</text>
+  </g>
+
+  <!-- Coupe filant sur toute la largeur. Épaisseurs à l'échelle : 4 px par cm. -->
+  <g>
+    <rect x="0" y="300" width="1600" height="24" fill="url(#b-bit)"/>
+    <rect x="0" y="324" width="1600" height="40" fill="url(#b-bit2)"/>
+    <rect x="0" y="364" width="1600" height="80" fill="url(#b-gnt)"/>
+    <rect x="0" y="444" width="1600" height="26" fill="url(#b-sol)"/>
+    <path d="M0 324h1600M0 364h1600M0 444h1600" stroke="#14171A" stroke-width="1.1" stroke-opacity=".5"/>
+    <path d="M0 300.8h1600" stroke="#14171A" stroke-width="1.6"/>
+
+    <!-- règle graduée verticale, comme dans l'application -->
+    <g font-family="IBM Plex Mono, monospace" font-size="11">
+      <g stroke="#E6E8E3">
+        <path d="M92 300v64" stroke-width="1" stroke-opacity=".6"/>
+        <path d="M85 300h14M85 340h14" stroke-width="1.2" stroke-opacity=".85"/>
+        <path d="M88 320h8M88 360h8" stroke-width="1" stroke-opacity=".45"/>
+      </g>
+      <g stroke="#14171A">
+        <path d="M92 364v80" stroke-width="1" stroke-opacity=".45"/>
+        <path d="M85 380h14M85 420h14" stroke-width="1.2" stroke-opacity=".75"/>
+        <path d="M88 400h8M88 440h8" stroke-width="1" stroke-opacity=".35"/>
+      </g>
+      <text x="107" y="312" fill="#E6E8E3">0</text>
+      <text x="107" y="352" fill="#E6E8E3">10</text>
+      <text x="107" y="392" fill="#14171A">20</text>
+      <text x="107" y="432" fill="#14171A">30</text>
+      <text x="107" y="459" font-size="10" letter-spacing="1.4" fill="#5E655D">CM</text>
+    </g>
+
+    <!-- désignation des couches -->
+    <g text-anchor="end" font-family="Archivo, Helvetica, sans-serif" font-size="14" font-weight="600">
+      <text x="1510" y="317" fill="#E6E8E3">BBSG<tspan font-family="IBM Plex Mono, monospace"
+            font-weight="400" fill="#B4BAB3" dx="7">6 cm</tspan></text>
+      <text x="1510" y="349" fill="#E6E8E3">GB3<tspan font-family="IBM Plex Mono, monospace"
+            font-weight="400" fill="#B4BAB3" dx="7">10 cm</tspan></text>
+      <text x="1510" y="409" fill="#14171A">GNT<tspan font-family="IBM Plex Mono, monospace"
+            font-weight="400" fill="#2B2D2F" dx="7">20 cm</tspan></text>
+      <text x="1510" y="461" font-family="IBM Plex Mono, monospace" font-size="11"
+            font-weight="400" fill="#5E655D">PF2</text>
+    </g>
+  </g>
+</svg>

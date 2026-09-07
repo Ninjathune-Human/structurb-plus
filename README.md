@@ -1,3 +1,5 @@
+![StructUrb+](docs/banner.png)
+
 # StructUrb+
 
 Dimensionnement de chaussée urbaine et bilan carbone à 50 ans, dans le navigateur.
@@ -6,7 +8,7 @@ Reprise du moteur de calcul de **Struct-Urb** (CERTU / Cerema, Visual Basic 6, G
 non maintenu) et du catalogue des structures types de chaussées urbaines, avec un
 module d'analyse du cycle de vie ajouté.
 
-**[→ Ouvrir l'application](https://ninjathune-human.github.io/structurb-plus/)**
+**[→ Ouvrir l'application](https://VOTRE-ORG.github.io/structurb-plus/)**
 
 ---
 
@@ -62,12 +64,29 @@ index.html                application autonome (fichier livré, servi par Pages)
 src/app.template.html     gabarit : interface et moteur de calcul
 src/data.js               bundle de données généré (ne pas éditer à la main)
 data/base-carbone.json    facteurs d'émission — c'est ici qu'on met à jour l'ACV
+docs/banner.svg           bannière du dépôt — source, modifiable
+docs/social-preview.png   image de prévisualisation (Settings → Social preview)
 tools/extract_certu.py    décodage des binaires Certu.str et Certu.mts
 tools/aide.py             conversion des textes d'aide RTF en HTML
 tools/build_data.py       assemblage du bundle
 tools/build.py            injection dans le gabarit
+tools/render_banner.js    rend les SVG de docs/ en PNG, polices comprises
 tests/test.js             parcours exhaustif du catalogue en navigateur headless
 ```
+
+## Refaire les images du dépôt
+
+GitHub affiche un SVG dans un README, mais sans charger de police distante : le texte
+tomberait sur une substitution système. Les SVG de `docs/` sont donc la source, et les
+PNG affichés sont rendus avec les polices du projet embarquées.
+
+```bash
+npm install --no-save puppeteer @fontsource/archivo @fontsource/ibm-plex-mono
+node tools/render_banner.js
+```
+
+`docs/social-preview.png` est à déposer dans *Settings → General → Social preview* :
+c'est la vignette utilisée quand le dépôt est partagé.
 
 ## Mettre à jour la base carbone
 
@@ -80,9 +99,13 @@ connaissance du code n'est nécessaire pour faire évoluer les données environn
 
 - Le **nombre de renouvellements** vaut 50 / durée de vie de référence. Un enrobé à
   20 ans est donc compté 2,5 fois sur la période.
-- La **masse volumique des déblais** vaut 1,0 t/m³ par défaut, ce qui reproduit
-  exactement le classeur de référence. Des déblais inertes réels sont plutôt à
-  1,8–2,1 t/m³ : le paramètre est éditable dans l'interface.
+- Le poste **déblais** est facturé à la tonne. La masse volumique est déduite de la
+  composition de la structure, avec les valeurs du classeur — 2,35 pour les enrobés,
+  2,10 pour la GNT, 1,80 pour le sable — ce qui donne 2,0 à 2,3 t/m³ selon la
+  structure. Elle reste modifiable quand la nature des matériaux en place est connue.
+  Le classeur d'origine utilisait implicitement 1,0 t/m³, en traitant des mètres cubes
+  comme des tonnes ; les études enregistrées avec cette valeur sont converties à
+  l'ouverture.
 - L'**enduit superficiel** n'a pas d'épaisseur structurelle au catalogue ; 1,5 cm sont
   retenus par défaut pour le calcul carbone, signalés par `~` sur la coupe.
 - Le catalogue CERTU date de 1998. Il ne couvre ni les forts taux d'agrégats d'enrobés

@@ -1,192 +1,223 @@
 {
- "_source": "Classeur « Impact environnemental chaussée » — fiches SEVE TP et INIES. Facteur exprime en kgCO2e par unite fonctionnelle (m3 en place, sauf deblais : tonne). Le nombre de renouvellements sur la periode vaut 50 / DVR.",
+ "_source": "Classeur « Impact environnemental chaussée » — fiches SEVE TP et INIES. Facteur exprime en kgCO2e par unite fonctionnelle (m3 en place, sauf deblais : tonne). Le nombre de renouvellements sur la periode vaut 50 / DVR. Le champ « d » est la masse volumique en t/m3 : celle employee par le classeur pour passer du facteur par tonne au facteur par metre cube. Elle sert aussi a estimer le tonnage de deblais.",
  "periode_ans": 50,
  "produits": [
   {
    "n": "BBSG 0/10 Cl.3 20%AE",
    "h": 113.27,
    "dvr": 20,
-   "src": "SEVE TP"
+   "src": "SEVE TP",
+   "d": 2.35
   },
   {
    "n": "BBSG 0/10 Cl.3 40%AE",
    "h": 99.64,
    "dvr": 20,
-   "src": "SEVE TP"
+   "src": "SEVE TP",
+   "d": 2.35
   },
   {
    "n": "BBME 0/10 M+ CL3",
    "h": 115.855,
    "dvr": 20,
-   "src": "SEVE TP"
+   "src": "SEVE TP",
+   "d": 2.35
   },
   {
    "n": "BBME 0/10 M+ BT CL3",
    "h": 108.335,
    "dvr": 20,
-   "src": "SEVE TP"
+   "src": "SEVE TP",
+   "d": 2.35
   },
   {
    "n": "BBME 0/10 20%AE M+ BT CL3",
    "h": 101.05,
    "dvr": 20,
-   "src": "SEVE TP"
+   "src": "SEVE TP",
+   "d": 2.35
   },
   {
    "n": "BBM 0/10",
    "h": 149.46,
    "dvr": 20,
-   "src": "SEVE TP"
+   "src": "SEVE TP",
+   "d": 2.35
   },
   {
    "n": "BBDr 0/10 Classe 2",
    "h": 124.43,
    "dvr": 20,
-   "src": "SEVE TP"
+   "src": "SEVE TP",
+   "d": 2.3
   },
   {
    "n": "BBTM 0/10 Classe 1",
    "h": 125.255,
    "dvr": 20,
-   "src": "SEVE TP"
+   "src": "SEVE TP",
+   "d": 2.35
   },
   {
    "n": "Enduit superficiel 0%AE",
    "h": 92.69,
    "dvr": 15,
-   "src": "SEVE TP"
+   "src": "SEVE TP",
+   "d": 2.3
   },
   {
    "n": "Enduit superficiel 40%AE",
    "h": 71.53,
    "dvr": 15,
-   "src": "SEVE TP"
+   "src": "SEVE TP",
+   "d": 2.3
   },
   {
    "n": "Grave émulsion 0%AE",
    "h": 79.58,
    "dvr": 20,
-   "src": "SEVE TP"
+   "src": "SEVE TP",
+   "d": 2.3
   },
   {
    "n": "Grave émulsion 40%AE",
    "h": 61.64,
    "dvr": 20,
-   "src": "SEVE TP"
+   "src": "SEVE TP",
+   "d": 2.3
   },
   {
    "n": "EME 0/14 30%AE 20/30 CL2",
    "h": 120.555,
    "dvr": 20,
-   "src": "SEVE TP"
+   "src": "SEVE TP",
+   "d": 2.35
   },
   {
    "n": "GB4 0/14 30%AE",
    "h": 86.95,
    "dvr": 20,
-   "src": "SEVE TP"
+   "src": "SEVE TP",
+   "d": 2.35
   },
   {
    "n": "GB3 0/14 30%AE",
    "h": 97.525,
    "dvr": 20,
-   "src": "SEVE TP"
+   "src": "SEVE TP",
+   "d": 2.35
   },
   {
    "n": "GB2 0/14 30%AE",
    "h": 94,
    "dvr": 20,
-   "src": "SEVE TP"
+   "src": "SEVE TP",
+   "d": 2.35
   },
   {
    "n": "GC4 grave ciment",
    "h": 89.7,
    "dvr": 30,
-   "src": "SEVE TP"
+   "src": "SEVE TP",
+   "d": 2.3
   },
   {
    "n": "GC3 grave ciment",
    "h": 69,
    "dvr": 30,
-   "src": "SEVE TP"
+   "src": "SEVE TP",
+   "d": 2.3
   },
   {
    "n": "BC5 béton de ciment",
    "h": 221.49,
    "dvr": 30,
-   "src": "SEVE TP"
+   "src": "SEVE TP",
+   "d": 2.3
   },
   {
    "n": "BC3 béton de ciment",
    "h": 172.5,
    "dvr": 30,
-   "src": "SEVE TP"
+   "src": "SEVE TP",
+   "d": 2.3
   },
   {
    "n": "BC5g goujonné",
    "h": 230,
    "dvr": 30,
-   "src": "SEVE TP"
+   "src": "SEVE TP",
+   "d": 2.3
   },
   {
    "n": "SC sable ciment",
    "h": 87.99,
    "dvr": 30,
-   "src": "SEVE TP"
+   "src": "SEVE TP",
+   "d": 2.1
   },
   {
    "n": "GLg grave laitier granulé",
    "h": 45,
    "dvr": 30,
-   "src": "SEVE TP"
+   "src": "SEVE TP",
+   "d": 2.2
   },
   {
    "n": "GCV grave cendre volante",
    "h": 40,
    "dvr": 30,
-   "src": "SEVE TP"
+   "src": "SEVE TP",
+   "d": 2.0
   },
   {
    "n": "Lit de pose sable",
    "h": 4.824,
    "dvr": 50,
-   "src": "SEVE TP"
+   "src": "SEVE TP",
+   "d": 1.8
   },
   {
    "n": "Béton désactivé",
    "h": 867,
    "dvr": 20,
-   "src": "INIES 28022"
+   "src": "INIES 28022",
+   "d": 2.3
   },
   {
    "n": "GNT 0/31,5",
    "h": 5.628,
    "dvr": 50,
-   "src": "SEVE TP"
+   "src": "SEVE TP",
+   "d": 2.1
   },
   {
    "n": "Pavé béton",
    "h": 224.48,
    "dvr": 20,
-   "src": "SEVE TP"
+   "src": "SEVE TP",
+   "d": 2.3
   },
   {
    "n": "Pavé pierre naturelle",
    "h": 138.8307,
    "dvr": 30,
-   "src": "SEVE TP"
+   "src": "SEVE TP",
+   "d": 2.6
   },
   {
    "n": "Dalle béton",
    "h": 224.48,
    "dvr": 20,
-   "src": "SEVE TP"
+   "src": "SEVE TP",
+   "d": 2.3
   },
   {
    "n": "Dalle pierre naturelle",
    "h": 138.8307,
    "dvr": 30,
-   "src": "SEVE TP"
+   "src": "SEVE TP",
+   "d": 2.6
   }
  ],
  "deblais": [

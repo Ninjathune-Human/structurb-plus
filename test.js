@@ -69,7 +69,7 @@ setTimeout(() => {
   console.log('--- combinaisons testées:', tested, 'erreurs cumulées:', errors.length);
 
   // activer le gel
-  const g = doc.querySelectorAll('#fGel button')[1];
+  const g = doc.getElementById('fGelSw');
   g && g.dispatchEvent(new w.MouseEvent('click',{bubbles:true}));
   console.log('--- gel actif, erreurs:', errors.length);
   const gelTxt = Array.from(doc.querySelectorAll('.readout .r')).map(r=>r.textContent.replace(/\s+/g,' ').trim()).filter(t=>/gel/i.test(t));

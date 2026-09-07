@@ -45,56 +45,6 @@ ligne, sans serveur ni installation, et peut être posé sur un partage réseau.
 Les fichiers de données binaires du Cerema ne sont pas versionnés ici. Récupérez-les
 et relancez la chaîne de construction :
 
-```bash
-git clone https://github.com/CEREMA/territoires-ville.StructUrb.git vendor/structurb
-pip install -r requirements.txt
-
-python tools/extract_certu.py vendor/structurb --out build/certu.json
-python tools/build_data.py      # -> src/data.js
-python tools/build.py           # -> index.html
-
-npm install --no-save jsdom
-node tests/test.js              # 408 combinaisons, doit afficher 0 erreur
-```
-
-## Organisation
-
-```
-index.html                application autonome (fichier livré, servi par Pages)
-src/app.template.html     gabarit : interface et moteur de calcul
-src/data.js               bundle de données généré (ne pas éditer à la main)
-data/base-carbone.json    facteurs d'émission — c'est ici qu'on met à jour l'ACV
-docs/banner.svg           bannière du dépôt — source, modifiable
-docs/social-preview.png   image de prévisualisation (Settings → Social preview)
-tools/extract_certu.py    décodage des binaires Certu.str et Certu.mts
-tools/aide.py             conversion des textes d'aide RTF en HTML
-tools/build_data.py       assemblage du bundle
-tools/build.py            injection dans le gabarit
-tools/render_banner.js    rend les SVG de docs/ en PNG, polices comprises
-tests/test.js             parcours exhaustif du catalogue en navigateur headless
-```
-
-## Refaire les images du dépôt
-
-GitHub affiche un SVG dans un README, mais sans charger de police distante : le texte
-tomberait sur une substitution système. Les SVG de `docs/` sont donc la source, et les
-PNG affichés sont rendus avec les polices du projet embarquées.
-
-```bash
-npm install --no-save puppeteer @fontsource/archivo @fontsource/ibm-plex-mono
-node tools/render_banner.js
-```
-
-`docs/social-preview.png` est à déposer dans *Settings → General → Social preview* :
-c'est la vignette utilisée quand le dépôt est partagé.
-
-## Mettre à jour la base carbone
-
-`data/base-carbone.json` porte les facteurs d'émission, les durées de vie de référence
-et la correspondance entre les matériaux du catalogue et les produits. Modifiez-le,
-relancez `python tools/build_data.py && python tools/build.py`, c'est tout. Aucune
-connaissance du code n'est nécessaire pour faire évoluer les données environnementales.
-
 ## Conventions de calcul à connaître
 
 - Le **nombre de renouvellements** vaut 50 / durée de vie de référence. Un enrobé à
